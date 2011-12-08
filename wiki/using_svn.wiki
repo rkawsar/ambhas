@@ -1,0 +1,9 @@
+#Using the svn to mange the subversion
+
+= Upload your filed into the repository =
+
+svn import /path/to/local/folder http://ambhas.googlecode.com/svn/ -m "your message"
+
+= Publish your changes to others =
+svn commit /path/to/file -m "your message"
+
