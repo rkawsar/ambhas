@@ -16,15 +16,20 @@ svn commit /path/to/file -m "your message"
 = See the status of your project =
 svn status
 
-This will print the list of the files/folders with their status. Following is the description of the codes given by Subversion.
-A Added
-C Conflicted
-D Deleted
-G Merged
-I Ignored
-M Modified
-R Replaced
-X Unversioned, used as external
-? Unversioned
-! Missing
-- Obstructed by another item
+This will print the list of the files/folders with their status. Following is the description of the codes given by Subversion:
+ *   No modifications
+ * A Added
+ * C Conflicted
+ * D Deleted
+ * G Merged
+ * I Ignored
+ * M Modified
+ * R Replaced
+ * X Unversioned, used as external
+ * ? Unversioned
+ * ! Missing
+ * - Obstructed by another item
+
+= Information about the a working copy =
+svn info path/to/repository
+
