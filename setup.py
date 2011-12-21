@@ -14,8 +14,7 @@ def read(*rnames):
 
 setup(
     name = "ambhas",
-    packages = ["ambhas"],
-    version = "0.0.6",
+    version = version,
     description = "A library devloped under the project AMBHAS",
     author = "Sat Kumar Tomer",
     author_email = "satkumartomer@gmail.com",
@@ -38,11 +37,11 @@ setup(
     long_description = (
     "\n"+read('docs/index.txt')
     + '\n' + '\n'
-    + read(CHANGELOG.txt)
+    + read('CHANGELOG.txt')
     + '\n' + '\n'
     +'License\n'
     +'========\n'
-    + read(LICENSE.txt')
+    + read('LICENSE.txt')
     + '\n'
     + 'Download\n'
     + '========\n'
