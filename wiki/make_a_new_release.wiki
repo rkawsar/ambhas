@@ -1,0 +1,27 @@
+#summary One-sentence summary of this page.
+
+= Make a new release =
+
+To create the x.y.z :
+{{{
+svn co https://ambhas.googlecode.com/svn/tags tags
+svn export https://ambhas.googlecode.com/svn/trunk/ x.y.z
+mv x.y.z tags/
+svn add tags/x.y.z
+svn ci tags/x.y.z -m "Creating the x.y.z tag"
+}}}
+
+Now put and entry for the x.y.z release in the CHANGELOG.txt file, and update the version number in setup.py in the tags/x.y.z folder. 
+
+Check in the changes:
+
+{{{
+svn ci tags/x.y.z -m "Final changes for the x.y.z release"
+}}}
+
+Now create the release:
+{{{
+svn export https://ambhas.googlecode.com/svn/tags/x.y.z x.y.z
+cd x.y.z
+python setup.py sdist bdist_egg register upload
+}}}
