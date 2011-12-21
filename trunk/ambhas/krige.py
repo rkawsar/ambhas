@@ -33,6 +33,10 @@ class OK:
         self.z = z
     
     def variogram(self, var_type='averaged', min_lag=None):
+        """
+        var_type: averaged or scattered
+        """
+        
         x = self.x
         y = self.y
         z = self.z
