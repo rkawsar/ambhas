@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#Describe how to make a new release of the library
 
 = Make a new release =
 
