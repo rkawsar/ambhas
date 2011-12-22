@@ -84,6 +84,14 @@ class OK:
                              spherical
                              linear
                              exponential
+            model_par:  parameters of variogram model
+                        this should be a dictionary 
+                        e.g. for shperical and exponential
+                            model_par = {'nugget':0, 'range':1, 'sill':1}
+                        for linear
+                            model_par = {'nugget':0, 'slope':1}
+        Output:
+            G:  The fitted variogram model
         """
         
         if model_type == 'spherical':
@@ -112,6 +120,18 @@ class OK:
         return G
             
     def krige(self, Xg, Yg, model_par, model_type):
+        """
+        Input:
+            Xg:     x location where krigged data is required
+            Yg:     y location whre kirgged data is required
+            model_par: see the vario_model
+            model_type: see the vario_model
+            
+        Attributes:
+            self.Zg : krigged data
+            self.s2_k = variance in the data
+                
+        """
         
         # set up the Gmod matrix 
         n = len(self.x)
