@@ -47,6 +47,6 @@ if __name__ == "__main__":
     print("mean of modeled prediction is %f"%mp.mean())
     
     mp_adjusted = bias_correction(oc, mc, mp)
-    print("mean of adjusted moeled prediction is %f"%mp_adjusted.mean())
+    print("mean of adjusted modeled prediction is %f"%mp_adjusted.mean())
 
     
