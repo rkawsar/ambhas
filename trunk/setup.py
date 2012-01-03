@@ -41,7 +41,7 @@ setup(
     + '\n' + '\n'
     +'License\n'
     +'========\n'
-    + read('LICENSE.txt')
+    + 'Please read LICENSE.text available with the library.'
     + '\n'
     + 'Download\n'
     + '========\n'
