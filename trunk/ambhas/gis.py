@@ -14,7 +14,9 @@ Functions:
 
 # load needed python modules 
 from pyproj import Proj
-
+import os
+from subprocess import call
+import sys
 
 
 def Geo2Pixel(Xgeo,Ygeo,GT):
@@ -101,7 +103,7 @@ def berambadi(Ifile,Ofile):
         print 'Execution failed!\n', message; sys.exit(1)
 
     # cut the area around Kabini Basin (output image will be of size 129 X 102)
-    bmc='664000 1309000 685000 1294000'
+    bmd='664000 1309000 685000 1294000'
     cmd = 'gdal_translate -a_ullr ' + bmd + ' -projwin ' + bmd + ' ' + Temp1+ ' ' + Temp2
     try:
         returncode = call(cmd, shell=True)
