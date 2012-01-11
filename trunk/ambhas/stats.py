@@ -25,6 +25,11 @@ def bias_correction(oc, mc, mp):
         
     """
     
+    # convert the input arrays into one dimension
+    oc = oc.flatten()
+    mc = mc.flatten()
+    mp = mp.flatten()    
+    
     # Instead of directly inverting the CDF, linear interpolation using 
     # interp1d is used to invert the CDF.
     
