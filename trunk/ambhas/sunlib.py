@@ -7,6 +7,8 @@ Created on Mon Feb  7 11:53:29 2011
 """
 
 import numpy as np
+import datetime as dt
+
 
 class sun():
     """
@@ -142,3 +144,57 @@ def EarthDistance(dn):
     a2 = 0.000719; b2 = 0.000077;
     D = np.sqrt(a0+a1*np.cos(thetaD)+b1*np.cos(thetaD)+a2*np.cos(2*thetaD)+b2*np.cos(2*thetaD));
     return D
+
+def sun_rise_set(day,month,year,lw=-76.44,ln=11.95):
+    """
+    module to calculate the sunset and sunrise time
+    
+    Input:
+        day:    day of the month (0-31)
+        month:  month
+        year:   year
+        lw:     longitude (west positive)
+        ln:     latitude (north positive)
+    
+    Output:
+        Trise:     sunrise time in GMT+5.5
+        Tset:      sunset time in GMT+5.5
+        
+    """
+    
+    Jdate = dt.date(year,month,day).toordinal()-dt.date(2000,1,1).toordinal() + 2451545
+    n_star = (Jdate - 2451545 - 0.0009) - (lw/360.0)
+    n = round(n_star)
+    J_star = 2451545 + 0.0009 + (lw/360.0) + n
+    
+    M = np.mod(357.5291 + 0.98560028 * (J_star - 2451545), 360.0)
+    C = (1.9148 * np.sin(M*np.pi/180)) + (0.0200 * np.sin(2 * M*np.pi/180)) + (0.0003 * np.sin(3 * M*np.pi/180))
+    
+    #Now, using C and M, calculate the ecliptical longitude of the sun.
+    lam = np.mod(M + 102.9372 + C + 180,360)
+    
+    #Now there is enough data to calculate an accurate Julian date for solar noon.
+    Jtransit = J_star + (0.0053 * np.sin(M*np.pi/180)) - (0.0069 * np.sin(2 * lam*np.pi/180))
+    
+    #To calculate the hour angle we need to find the declination of the sun
+    delta = np.arcsin( np.sin(lam*np.pi/180) * np.sin(23.45*np.pi/180) )*180/np.pi
+    
+    #Now, calculate the hour angle, which corresponds to half of the arc length of 
+    #the sun at this latitude at this declination of the sun
+    H = np.arccos((np.sin(-0.83*np.pi/180) - np.sin(ln*np.pi/180) * np.sin(delta*np.pi/180)) / (np.cos(ln*np.pi/180) * np.cos(delta*np.pi/180)))*180/np.pi
+    
+    #Note: If H is undefined, then there is either no sunrise (in winter) or no sunset (in summer) for the supplied latitude.
+    #Okay, time to go back through the approximation again, this time we use H in the calculation
+    
+    J_star_star = 2451545 + 0.0009 + ((H + lw)/360) + n
+    #The values of M and λ from above don't really change from solar noon to sunset, so there is no need to recalculate them before calculating sunset.
+    Jset = J_star_star + (0.0053 * np.sin(M*np.pi/180)) - (0.0069 * np.sin(2 * lam*np.pi/180))
+    
+    #Instead of going through that mess again, assume that solar noon is half-way between sunrise and sunset (valid for latitudes < 60) and approximate sunrise.
+    Jrise = Jtransit - (Jset - Jtransit)
+    
+    Trise = np.mod(Jrise,1)*24+5.5-12
+    
+    Tset = np.mod(Jset,1)*24+5.5+12
+    
+    return Trise, Tset 
