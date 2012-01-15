@@ -137,8 +137,8 @@ def EarthDistance(dn):
     Output:
         D:     distance of earth to sun in AU
     """
-    thetaD = 2*pi*dn/365
+    thetaD = 2*np.pi*dn/365
     a0 = 1.000110; a1 = 0.034221; b1 = 0.001280; 
     a2 = 0.000719; b2 = 0.000077;
-    D = np.sqrt(a0+a1*cos(thetaD)+b1*cos(thetaD)+a2*cos(2*thetaD)+b2*cos(2*thetaD));
+    D = np.sqrt(a0+a1*np.cos(thetaD)+b1*np.cos(thetaD)+a2*np.cos(2*thetaD)+b2*np.cos(2*thetaD));
     return D
