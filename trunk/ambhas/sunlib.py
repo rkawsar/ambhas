@@ -125,3 +125,20 @@ class sun():
         tc2 = ts2 - E - lon_deg/15 + ze
         
         return tc1, tc2
+
+
+def EarthDistance(dn):
+    """
+    module to calculate the earth distance in AU
+    
+    Input:
+        dn:    julian day
+    
+    Output:
+        D:     distance of earth to sun in AU
+    """
+    thetaD = 2*pi*dn/365
+    a0 = 1.000110; a1 = 0.034221; b1 = 0.001280; 
+    a2 = 0.000719; b2 = 0.000077;
+    D = np.sqrt(a0+a1*cos(thetaD)+b1*cos(thetaD)+a2*cos(2*thetaD)+b2*cos(2*thetaD));
+    return D
