@@ -8,10 +8,10 @@ svn import /path/to/local/folder http://ambhas.googlecode.com/svn/ -m "your mess
 svn checkout http://ambhas.googlecode.com/svn/trunk/ ambhas
 
 = Add a new file/folder to repository = 
-svn add file/folder_name
+svn add folder/file_name
 
 = Publish your changes to others =
-svn commit /path/to/file -m "your message"
+svn commit -m "your message"
 
 = See the status of your project =
 svn status
@@ -32,4 +32,3 @@ This will print the list of the files/folders with their status. Following is th
 
 = Information about the a working copy =
 svn info path/to/repository
-
