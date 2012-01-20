@@ -32,3 +32,6 @@ This will print the list of the files/folders with their status. Following is th
 
 = Information about the a working copy =
 svn info path/to/repository
+
+= SVN behind Proxy=
+Go to the ~/.subversion/servers and update the relevant entries. 
