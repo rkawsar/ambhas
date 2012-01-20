@@ -30,7 +30,7 @@ This will print the list of the files/folders with their status. Following is th
  * ! Missing
  * - Obstructed by another item
 
-= Information about the a working copy =
+= Information about a working copy =
 svn info path/to/repository
 
 = SVN behind Proxy=
