@@ -1,0 +1,17 @@
+Changes
+=======
+
+0.1.0 
+* Initial version
+
+0.1.1
+* Minor corrections in setup.py files
+
+0.2.0
+* few packages added
+
+0.3.0
+* groundwater, sun_rise_set, soil texture module, etc. added
+
+0.3.1
+* manifest.in file edited
