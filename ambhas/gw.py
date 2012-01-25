@@ -21,14 +21,14 @@ class GW_1D():
         Dnet: net groundwater draft
         """
         self.R = R
-        self.Dnet = 0
+        self.Dnet = Dnet
         
     def set_parameters(self, F, G, r, hmin=0):
         """
         F: model parameter
         G: model parameter
         r: recharge factor
-        hmin: groundwater level at which based flow ceases
+        hmin: groundwater level at which base flow ceases
         
         sy: specific yield
         lam: decay constant
