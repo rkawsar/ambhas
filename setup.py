@@ -19,7 +19,7 @@ setup(
     author = "Sat Kumar Tomer",
     author_email = "satkumartomer@gmail.com",
     url = "http://ambhas.com/",
-    download_url = "http://ambhas.com/tools/ambhas-0.0.5.tar.gz",
+    download_url = "http://pypi.python.org/pypi/ambhas/",
     keywords = ["ambhas", "hydrology", "statistics", "modelling"],
     packages = find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,

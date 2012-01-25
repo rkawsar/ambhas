@@ -1,4 +1,4 @@
 include CHANGELOG.txt
 include LICENSE.txt
-recursive-include docs *.html *.css *.png 
+recursive-include docs *.html *.css *.png *.txt
 
