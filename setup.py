@@ -7,7 +7,7 @@ except ImportError:
 
 import sys, os
 
-version = '0.1.1'
+version = '0.3.1'
 
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
