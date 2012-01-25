@@ -35,14 +35,14 @@ setup(
         "Topic :: Scientific/Engineering",
         ],
     long_description = (
-    "\n"+read('docs/index.txt')
+    '\n'+read('docs/index.txt')
     + '\n' + '\n'
     + read('CHANGELOG.txt')
     + '\n' + '\n'
     +'License\n'
     +'========\n'
     + 'Please read LICENSE.text available with the library.'
-    + '\n'
+    + '\n\n'
     + 'Download\n'
     + '========\n'
     ),
