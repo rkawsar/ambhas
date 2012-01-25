@@ -8,7 +8,7 @@ Created on Wed Nov 16 14:25:50 2011
 """
 from __future__ import division
 import numpy as np
-from ambhas.err import L
+from ambhas.errlib import L
 
 class GW_1D():
     """

@@ -18,6 +18,9 @@ class xlsread():
     
     def __init__(self, fname):
         self.fname = fname
+        book = xlrd.open_workbook(self.fname)
+        self.sheet_names = book.sheet_names()
+        self.book = book
                 
     def get_cells(self, cell_range, sheet):
         """
@@ -25,8 +28,7 @@ class xlsread():
                     range of cells i.e. 'a2:f5'
         sheet:  name of the sheet, must be string
         """
-        
-        book = xlrd.open_workbook(self.fname)
+        book = self.book
         sheet = book.sheet_by_name(sheet)
         
         if ':' not in cell_range:
@@ -83,7 +85,7 @@ class xlswrite():
         self.data = data
         self.cell_start = cell_start
         
-        # initialize the xlrt     
+        # initialize the xlwt     
         book = xlwt.Workbook()
         sheet = book.add_sheet(sheet)
         
