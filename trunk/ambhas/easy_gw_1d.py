@@ -90,7 +90,7 @@ def gw_model_file(in_fname, out_fname, figure_dir=None):
         sheet.write(1,8,lam)
         sheet.write(1,9,sy)
             
-        first_date = ts.Date(freq='M',year=year[0],month=year[1])
+        first_date = ts.Date(freq='M',year=year[0],month=month[1])
         gw_meas_series = ts.time_series(meas_gwl, start_date=first_date)
         gw_sim_series = ts.time_series(sim_gwl, start_date=first_date)
         
