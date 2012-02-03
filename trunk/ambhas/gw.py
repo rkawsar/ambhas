@@ -9,6 +9,9 @@ Created on Wed Nov 16 14:25:50 2011
 from __future__ import division
 import numpy as np
 from ambhas.errlib import L
+from osgeo import gdal
+from osgeo.gdalconst import *
+from ambhas.xls import xlsread
 
 class GW_1D():
     """
@@ -97,7 +100,7 @@ class GW_1D():
         self.best_ind = ind
   
 
-class GW_2D():
+class GW_2D_yz():
     """
     This class perform the groundwater modelling
     """
@@ -207,8 +210,113 @@ class GW_2D():
         self.run_model(hini, t)
         self.best_h = self.h
         self.best_ind = ind
+
+class GW_2D_xy():
+    """
+    this class performs the 2 dimensinoal groundwater modelling in horizonal 
+    plane using the 2 dimensional groundwater flow equation
+    """
+    def __init__(self, watershed, hini, D, dt, dx, hmin, F, outlet):
+        """
+        watershed: map of watershed in tiff format, 1 means inside watershed
+        hini: initial groundwater level
+        D:  T/Sy
+        """
+        self.watershed = watershed
+        self.hini = hini
+        self.D = D
+        self.dt = dt
+        self.dx = dx
+        self.hmin = hmin
+        self.F = F
+        self.outlet = outlet
+        self.mac_cormack()
+        
+        
+    def mac_cormack(self):
+        """
+        this uses the mac cormack scheme
+        """        
+        h = self.hini
+        dt = self.dt
+        dx = self.dx
+        hmin = self.hmin
+        F = self.F
+        outlet = self.outlet
+        n_outlet = watershed[outlet].sum()
+        discharge = F*(h[watershed].mean()-hmin)
+        
+        grid_D = D*dt/dx**2
+        hstar = np.zeros(h.shape)
+        for i in range(h.shape[0]):
+            for j in range(h.shape[1]):
+                if watershed[i,j]:
+                    d2h_dx2 = h[i+2,j] -2*h[i+1,j] + h[i,j]
+                    d2h_dy2 = h[i,j+2] -2*h[i,j+1] + h[i,j]
+                    if watershed[i+1,j]*watershed[i+2,j]  == 0:
+                        d2h_dx2 = 0
+                    if watershed[i,j+1]*watershed[i,j+2] == 0:
+                        d2h_dy2 = 0
+                    hstar[i,j] = h[i,j] + grid_D*(d2h_dx2+ d2h_dy2)
+        
+        hnew = np.zeros(h.shape)
+        for i in range(h.shape[0]):
+            for j in range(h.shape[1]):
+                if watershed[i,j]:
+                    d2h_dx2 = h[i-2,j] -2*hstar[i-1,j] + hstar[i,j]
+                    d2h_dy2 = h[i,j-2] -2*hstar[i,j-1] + hstar[i,j]
+                    if watershed[i-1,j]*watershed[i-2,j] == 0:
+                        d2h_dx2 = 0
+                    if watershed[i,j-1]*watershed[i,j-2] == 0:
+                        d2h_dy2 = 0
+                    hnew[i,j] = 0.5*(h[i,j]+hstar[i,j] + grid_D*(d2h_dx2+ d2h_dy2))
+                           
+        self.hnew = hnew        
         
 if __name__ == "__main__":
+    from scipy.interpolate import Rbf
+    from random import sample
+    import matplotlib.pyplot as plt
+    
+    ################## horizontal 2d grounwater model ##############
+    # read the watershed in tiff format
+    dataset = gdal.Open('/home/tomer/south_gundal/geospatial_data/watershed_500.tif',GA_ReadOnly)
+    watershed = dataset.GetRasterBand(1).ReadAsArray()
+    watershed[-2,:] = 0
+    GT = dataset.GetGeoTransform()
+    # read the initial groundwater level data from xls file
+    fname = '/home/tomer/south_gundal/gw_level.xls'    
+    xls_file = xlsread(fname)
+    sample_id = sample(xrange(23908), 500)
+    gw_x = xls_file.get_cells('A1:A23908', 'dec2009')[sample_id].flatten()
+    gw_y = xls_file.get_cells('B1:B23908', 'dec2009')[sample_id].flatten()
+    gw_ini = xls_file.get_cells('E1:E23908', 'dec2009')[sample_id].flatten()
+    # convert the point value of groundwater levels into a map having the same 
+    #extent and size as of watershed
+    rbfi = Rbf(gw_x, gw_y, gw_ini, function='linear')
+    xi = np.linspace(GT[0]+GT[1]/2, GT[0]+GT[1]*(dataset.RasterXSize-0.5), 
+                        dataset.RasterXSize)
+    yi = np.linspace(GT[3]+GT[5]/2, GT[3]+GT[5]*(dataset.RasterYSize-0.5),
+                        dataset.RasterYSize)
+    XI, YI = np.meshgrid(xi,yi)
+    hini = rbfi(XI, YI)
+
+    #run the model
+    dt = 1
+    D = 20/0.008
+    dx = 500
+    hmin = 500
+    F = 0.999
+    outlet = [[5],[43,44,45,46]]
+    foo = GW_2D_xy(watershed, hini, D, dt, dx, hmin, F, outlet)
+    
+    print hini[watershed==1].mean()
+    print foo.hnew[watershed==1].mean()
+    
+    plt.imshow(foo.hnew, vmin=650)
+    plt.colorbar()
+    plt.show()
+    ############ lumped (1D) model ##################3
     # forcing
     R = np.random.rand(100)
     foo = GW_1D(R)
@@ -231,10 +339,10 @@ if __name__ == "__main__":
     # ensemble
     h_obs = np.random.rand(101)
     foo.ens([0.5, 1.0], [1, 20], [0, 0.2], [50,70], 2, 20, h_obs, 10)
-    print(foo.L)
+    #print(foo.L)
     
     ################### hill slope groundwater modelling ######################
-    foo = GW_2D(R)
+    foo = GW_2D_yz(R)
     lam = [0.00008, 0.00009, 0.0001, 0.0002]
     sy = [0.001, 0.001, 0.001, 0.001]
     r = 0.2
