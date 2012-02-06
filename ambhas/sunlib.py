@@ -5,7 +5,7 @@ Created on Mon Feb  7 11:53:29 2011
 @author: sat kumar tomer (http://civil.iisc.ernet.in/~satkumar/)
 
 """
-
+from __future__ import division
 import numpy as np
 import datetime as dt
 
@@ -87,6 +87,27 @@ class sun():
                 np.cos(lat_rad)*np.cos(delta)*np.cos(w))
         
         return I0
+    
+    def solar_zenith_angle(self,tc):
+        """
+        Input:
+            tc:     local time in hours
+        Output:
+            sza:    solar zenith angle in radian
+        """
+        ze = self.ze
+        lat_rad = self._lat_rad
+        E = self._E 
+        delta = self._delta
+        
+        ts = tc + E + self.lon_deg/15 - ze
+        # hour angle
+        w = ((ts-12)*15)/180.0*np.pi
+        
+        sza = np.arccos(np.sin(lat_rad)*np.sin(delta) + 
+                np.cos(lat_rad)*np.cos(delta)*np.cos(w))
+        
+        return sza
         
     def daily_ETR(self):
         """ 
