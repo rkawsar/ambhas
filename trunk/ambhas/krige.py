@@ -118,7 +118,34 @@ class OK:
             raise ValueError('model_type should be spherical or linear or exponential')
             
         return G
+
+    def int_vario(self, Xg, Yg, model_par, model_type):
+        """
+        this computes the integral of the variogram over a square
+        using the Monte Carlo integration method
+        
+        this works only for two dimensional grid
+        
+        Input:
+            Xg:     x location where krigged data is required
+            Yg:     y location whre kirgged data is required
+            model_par: see the vario_model
+            model_type: see the vario_model
+        """
+        avg_vario = np.empty((len(x), (len(Xg)-1)*(len(Yg)-1)))
+        for k in range(len(self.x)):
             
+            avg_vario_ens = np.empty((len(Xg)-1, len(Yg)-1))
+            for i in range(len(Xg)-1):
+                for j in range(len(Yg)-1):
+                    Xg_rand = Xg[i]+np.random.rand(10)*(Xg[i+1]-Xg[i])
+                    Yg_rand = Yg[j]+np.random.rand(10)*(Yg[j+1]-Yg[i])    
+
+                    DOR = ((self.x[k] - Xg_rand)**2 + (self.y[k] - Yg_rand)**2)**0.5
+                    avg_vario_ens[i,j] = self.vario_model(DOR, model_par, model_type).mean()
+            avg_vario[k,:] = avg_vario_ens.flatten()
+        return avg_vario
+    
     def krige(self, Xg, Yg, model_par, model_type):
         """
         Input:
@@ -164,12 +191,60 @@ class OK:
         
         self.Zg = Zg
         self.s2_k = s2_k
+        
+    def block_krige(self, Xg, Yg, model_par, model_type):
+        """
+        Input:
+            Xg:     x location where krigged data is required
+            Yg:     y location whre kirgged data is required
+            model_par: see the vario_model
+            model_type: see the vario_model
+            
+        Attributes:
+            self.Zg : krigged data
+            self.s2_k = variance in the data
+                
+        """
+        
+        # set up the Gmod matrix 
+        n = len(self.x)
+        Gmod = np.empty((n+1,n+1))
+        Gmod[:n, :n] = self.vario_model(self.D, model_par, model_type)
+                
+        Gmod[:,n] = 1
+        Gmod[n,:] = 1
+        Gmod[n,n] = 0
+
+        Gmod = np.matrix(Gmod)      
+        
+        # inverse of Gmod
+        Ginv = Gmod.I
+
+        Xg = Xg.flatten()
+        Yg = Yg.flatten()        
+        
+     
+        avg_vario = self.int_vario(Xg, Yg, model_par, model_type)
+        Zg = np.empty(avg_vario.shape[1])
+        s2_k = np.empty(avg_vario.shape[1])
+        
+        for k in range(avg_vario.shape[1]):
+            
+            GR = np.empty((n+1,1))
+            GR[:n,0] = avg_vario[:,k]
+            GR[n,0] = 1
+            E = np.array(Ginv * GR )
+            Zg[k] = np.sum(E[:n,0]*self.z)
+            s2_k[k] = np.sum(E[:n,0]*GR[:n,0])+ E[n, 0]
+        
+        self.Zg = Zg.reshape(len(Xg)-1, len(Yg)-1)
+        self.s2_k = s2_k.reshape(len(Xg)-1, len(Yg)-1)
             
 if __name__ == "__main__":          
     # generate some sythetic data
-    x = np.random.normal(size=100)
-    y = np.random.normal(size=100)
-    z = 0.0*np.random.normal(size=100)+x+y
+    x = np.random.rand(10)
+    y = np.random.rand(10)
+    z = 0.0*np.random.normal(size=10)+x+y
     
     foo = OK(x,y,z)
     ax,ay = foo.variogram()
@@ -182,14 +257,26 @@ if __name__ == "__main__":
     model_par['range'] = 1
     model_par['sill'] = 2.0
     
-    G = foo.vario_model(lags, model_par, model_type = 'exponential')
+    #G = foo.vario_model(lags, model_par, model_type = 'exponential')
     #plt.plot(lags, G, 'k')
     #plt.show()
     
-    Rx = np.linspace(-1,1)
-    Ry = np.linspace(0,1)
-    foo.krige(Rx, Ry, model_par, 'exponential')
+    #Rx = np.linspace(-1,1)
+    #Ry = np.linspace(0,1)
+    #foo.krige(Rx, Ry, model_par, 'exponential')
     
-    plt.plot(x,z,'ro')
-    plt.plot(Rx,foo.Zg)
+    #plt.plot(x,z,'ro')
+    #plt.plot(Rx,foo.Zg)
+    #plt.show()
+    
+    # block kriging
+    xg = np.linspace(0,1,5)
+    yg = np.linspace(0,1,8)
+    foo.block_krige(xg, yg, model_par, model_type = 'exponential')
+    #plt.imshow(foo.s2_k, extent=(0,1,0,1))
+    plt.imshow(foo.Zg, extent=(0,1,0,1))
+    #plt.matshow(foo.Zg)
+    #plt.matshow(foo.s2_k)
+    plt.colorbar()
+    plt.plot(x,y, 'ro')
     plt.show()
