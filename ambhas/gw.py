@@ -41,8 +41,11 @@ class GW_1D():
         self.r = r
         self.hmin = hmin
         
-        self.lam = (1-F)**2/G
-        self.sy = (1-F)/G
+        #self.lam = (1-F)**2/G
+        #self.sy = (1-F)/G
+        
+        self.sy = 1/G
+        self.lam = (1-F)*self.sy
             
     def run_model(self, hini, t):
         """
