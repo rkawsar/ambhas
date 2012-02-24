@@ -32,7 +32,7 @@ class OK:
         self.y = y
         self.z = z
     
-    def variogram(self, var_type='averaged', min_lag=None):
+    def variogram(self, var_type='averaged', n_lag=9):
         """
         var_type: averaged or scattered
         """
@@ -46,32 +46,33 @@ class OK:
         Z1,Z2 = np.meshgrid(z,z)
         
         D = np.sqrt((X1 - X2)**2 + (Y1 - Y2)**2)
-        self.D = D
+        
         G = 0.5*(Z1 - Z2)**2
         indx = range(len(z))
         C,R = np.meshgrid(indx,indx)
-        I = R > C
-
-        D2 = D*(np.diag(x*np.nan)+1)
-        lag = 10*np.mean(np.nanmin(D2))
-	if min_lag is not None:
-	    lag = min_lag
-
-        hmd = D.max()/2
-        max_lags = np.floor(hmd/lag)
-        LAGS = np.ceil(D/lag)
+        G = G[R>C]
+        D = D[R > C]
+        self.D = D
         
-        DE = np.empty(max_lags)
-        PN = np.empty(max_lags)
-        GE = np.empty(max_lags)
-        for i in range(int(max_lags)):
-            SEL = (LAGS == i+1)
-            DE[i] = D[SEL].mean()
-            PN[i] = np.sum(SEL == 1)/2
-            GE[i] = G[SEL].mean()
+        # group the variogram
+        # the group are formed based on the equal number of bin
+        total_n = len(D)
+        group_n = int(total_n/n_lag)
+        sor_i = np.argsort(D)[::-1]
+        
+        DE = np.empty(n_lag)
+        GE = np.empty(n_lag)
+        for i in range(n_lag):
+            if i<n_lag-1:
+                DE[i] = D[sor_i[group_n*i:group_n*(i+1)]].mean()
+                GE[i] = G[sor_i[group_n*i:group_n*(i+1)]].mean()
+                
+            else:
+                DE[i] = D[sor_i[group_n*i:]].mean()
+                GE[i] = G[sor_i[group_n*i:]].mean()
             
         if var_type == 'scattered':
-            return D[I],G[I]      
+            return D,G      
         elif var_type == 'averaged':
             return DE,GE
         else:
@@ -242,14 +243,15 @@ class OK:
             
 if __name__ == "__main__":          
     # generate some sythetic data
-    x = np.random.rand(10)
-    y = np.random.rand(10)
-    z = 0.0*np.random.normal(size=10)+x+y
+    x = np.random.rand(20)
+    y = np.random.rand(20)
+    z = 0.0*np.random.normal(size=20)+x+y
     
     foo = OK(x,y,z)
+    #ax,ay = foo.variogram('scattered')
     ax,ay = foo.variogram()
     
-    #plt.plot(ax,ay,'ro')
+    plt.plot(ax,ay,'ro')
     
     lags = np.linspace(0,5)
     model_par = {}
@@ -259,7 +261,7 @@ if __name__ == "__main__":
     
     #G = foo.vario_model(lags, model_par, model_type = 'exponential')
     #plt.plot(lags, G, 'k')
-    #plt.show()
+    plt.show()
     
     #Rx = np.linspace(-1,1)
     #Ry = np.linspace(0,1)
@@ -270,13 +272,13 @@ if __name__ == "__main__":
     #plt.show()
     
     # block kriging
-    xg = np.linspace(0,1,5)
-    yg = np.linspace(0,1,8)
-    foo.block_krige(xg, yg, model_par, model_type = 'exponential')
+    #xg = np.linspace(0,1,5)
+    #yg = np.linspace(0,1,8)
+    #foo.block_krige(xg, yg, model_par, model_type = 'exponential')
     #plt.imshow(foo.s2_k, extent=(0,1,0,1))
-    plt.imshow(foo.Zg, extent=(0,1,0,1))
+    #plt.imshow(foo.Zg, extent=(0,1,0,1))
     #plt.matshow(foo.Zg)
     #plt.matshow(foo.s2_k)
-    plt.colorbar()
-    plt.plot(x,y, 'ro')
-    plt.show()
+    #plt.colorbar()
+    #plt.plot(x,y, 'ro')
+    #plt.show()
