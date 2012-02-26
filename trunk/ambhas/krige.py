@@ -28,9 +28,9 @@ class OK:
         
     """
     def __init__(self,x,y,z):
-        self.x = x
-        self.y = y
-        self.z = z
+        self.x = x.flatten()
+        self.y = y.flatten()
+        self.z = z.flatten()
     
     def variogram(self, var_type='averaged', n_lag=9):
         """
@@ -51,28 +51,29 @@ class OK:
         indx = range(len(z))
         C,R = np.meshgrid(indx,indx)
         G = G[R>C]
-        D = D[R > C]
+        
         self.D = D
+        DI = D[R > C]
         
         # group the variogram
         # the group are formed based on the equal number of bin
-        total_n = len(D)
+        total_n = len(DI)
         group_n = int(total_n/n_lag)
-        sor_i = np.argsort(D)[::-1]
+        sor_i = np.argsort(DI)[::-1]
         
         DE = np.empty(n_lag)
         GE = np.empty(n_lag)
         for i in range(n_lag):
             if i<n_lag-1:
-                DE[i] = D[sor_i[group_n*i:group_n*(i+1)]].mean()
+                DE[i] = DI[sor_i[group_n*i:group_n*(i+1)]].mean()
                 GE[i] = G[sor_i[group_n*i:group_n*(i+1)]].mean()
                 
             else:
-                DE[i] = D[sor_i[group_n*i:]].mean()
+                DE[i] = DI[sor_i[group_n*i:]].mean()
                 GE[i] = G[sor_i[group_n*i:]].mean()
             
         if var_type == 'scattered':
-            return D,G      
+            return DI,G      
         elif var_type == 'averaged':
             return DE,GE
         else:
@@ -184,7 +185,9 @@ class OK:
             
             DOR = ((self.x - Xg[k])**2 + (self.y - Yg[k])**2)**0.5
             GR = np.empty((n+1,1))
+            
             GR[:n,0] = self.vario_model(DOR, model_par, model_type)
+            
             GR[n,0] = 1
             E = np.array(Ginv * GR )
             Zg[k] = np.sum(E[:n,0]*self.z)
@@ -197,7 +200,7 @@ class OK:
         """
         Input:
             Xg:     x location where krigged data is required
-            Yg:     y location whre kirgged data is required
+            Yg:     y location whre krigged data is required
             model_par: see the vario_model
             model_type: see the vario_model
             
@@ -259,17 +262,17 @@ if __name__ == "__main__":
     model_par['range'] = 1
     model_par['sill'] = 2.0
     
-    #G = foo.vario_model(lags, model_par, model_type = 'exponential')
-    #plt.plot(lags, G, 'k')
+    G = foo.vario_model(lags, model_par, model_type = 'exponential')
+    plt.plot(lags, G, 'k')
     plt.show()
     
-    #Rx = np.linspace(-1,1)
-    #Ry = np.linspace(0,1)
-    #foo.krige(Rx, Ry, model_par, 'exponential')
+    Rx = np.linspace(-1,1)
+    Ry = np.linspace(0,1)
+    XI,YI = np.meshgrid(Rx,Ry)
+    foo.krige(XI, YI, model_par, 'exponential')
     
-    #plt.plot(x,z,'ro')
-    #plt.plot(Rx,foo.Zg)
-    #plt.show()
+    plt.matshow(foo.Zg.reshape(50,50))
+    plt.show()
     
     # block kriging
     #xg = np.linspace(0,1,5)
