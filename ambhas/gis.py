@@ -17,7 +17,12 @@ from pyproj import Proj
 import os
 from subprocess import call
 import sys
+import numpy as np
 
+def utm2image(GT,utm):
+    Xpixel = ((utm[:,0] - GT[0])*GT[5] - (utm[:,1] - GT[3])*GT[2])/(GT[1]*GT[5]-GT[4]*GT[2])
+    Ypixel = ((utm[:,1] - GT[3])*GT[1] - (utm[:,0] - GT[0])*GT[4])/(GT[1]*GT[5]-GT[4]*GT[2])
+    return (np.round(Xpixel)).astype('int'),(np.round(Ypixel)).astype('int')
 
 def Geo2Pixel(Xgeo,Ygeo,GT):
     a1 = GT[1]
