@@ -11,11 +11,7 @@ Created on Mon Feb 27 19:18:08 2012
 from osgeo.gdalconst import *
 import gdal, xlrd,xlwt
 import numpy as np
-
-ds = ['/home/tomer/soil_map/raster/theta_r.tif', 
-      '/home/tomer/soil_map/raster/theta_s.tif']
-ds_short_name = ['theta_r', 'theta_s']
-xls_out = '/home/tomer/out.xls'
+from ambhas.gis import utm2image
 
 def extract_gis(xls_in, xls_out, ds, ds_short_name):
     """
@@ -43,7 +39,7 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name):
         data = dataset.GetRasterBand(1).ReadAsArray() 
         GT = dataset.GetGeoTransform()
         
-        book = xlrd.open_workbook('plots_66.xls')
+        book = xlrd.open_workbook(xls_in)
         
         for i in xrange(66):
             sheet = book.sheet_by_name(str(i+1))
