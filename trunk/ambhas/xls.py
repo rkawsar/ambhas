@@ -51,8 +51,13 @@ class xlsread():
                 for j in range(col1,col2+1):
                     if sheet.cell_value(i,j): # test if the cell is empty
                         data_row.append(sheet.cell_value(i,j))
-                    else: # if cell is empty fill with nan
-                        data_row.append(np.nan)
+                    else: 
+                        if sheet.cell_value(i,j) == 0:
+                            # if the cell is zero fill with zeros
+                            data_row.append(sheet.cell_value(i,j))
+                        else:
+                            # if cell is empty fill with nan
+                            data_row.append(np.nan)
                     
                 data.append(data_row)
             
