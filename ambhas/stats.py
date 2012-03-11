@@ -12,6 +12,7 @@ import numpy as np
 import statistics as st
 from scipy.interpolate import interp1d
 from scipy.stats import norm, chi2
+from scipy.stats import scoreatpercentile
 
 def bias_correction(oc, mc, mp):
     """
@@ -150,7 +151,58 @@ def independant(x,y, alpha = 0.05):
         
     return ind, p
 
+
+class SpatOutlier():
+    """
+    this class identify the outliers from the given spatial data of point values
+    """
     
+    def __init__(self,rain):
+        """
+        Input:
+            rain:   rain at different spatial locations and time
+            time ==> is defined in the first dimension
+            space ==> is defined in the second dimension
+        """
+        # check for the number of dimension
+        if rain.ndim > 2:
+            raise ValueError('The dimension of the input should be less than or equal to 2 (two)')
+        elif rain.ndim == 1:
+            rain.shape = (1,-1)
+        self.rain = rain
+            
+    def _identify_outlier(self,threshold=2.0):
+        """
+        Input:
+            threshold: threshold above which the data will be termed as outlier
+        """
+        rain = self.rain
+        q_25 = scoreatpercentile(rain.T,25)
+        q_75 = scoreatpercentile(rain.T,75)
+        q_50 = scoreatpercentile(rain.T,50)
+        
+        q_25_m = np.tile(q_25,(rain.shape[1],1)).T
+        q_50_m = np.tile(q_50,(rain.shape[1],1)).T
+        q_75_m = np.tile(q_75,(rain.shape[1],1)).T
+        
+        index = np.abs(rain-q_50_m)/(q_75_m-q_25_m)
+        self.index = index
+        
+        self.outliers = index>=threshold
+    
+    def fill_with_nan(self):
+        """
+        this method fills the outliers with the nan
+        
+        Output:
+            rain_filled:    rain filled with nan where outliers were present
+        """
+        self._identify_outlier()
+        
+        rain_filled = self.rain
+        rain_filled[self.outliers] = np.nan
+        return rain_filled
+
 if __name__ == "__main__":
     oc = np.random.randn(100)
     mc = 2+np.random.randn(100)
@@ -159,8 +211,15 @@ if __name__ == "__main__":
     print("mean of observed current is %f"%oc.mean())
     print("mean of modeled current is %f"%mc.mean())
     print("mean of modeled prediction is %f"%mp.mean())
-    
+     
     mp_adjusted = bias_correction(oc, mc, mp)
     print("mean of adjusted modeled prediction is %f"%mp_adjusted.mean())
+    
+    # check the SpatOutlier class
+    x = np.random.randn(5,20)
+    x[4,4] = 2.9
+    foo = SpatOutlier(x)
+    x1 = foo.fill_with_nan()
+    print x1[4,4]
 
     
