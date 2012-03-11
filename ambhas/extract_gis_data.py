@@ -25,7 +25,7 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name):
     xls_out: the xls file in which the output will be written
     ds: the data source file name in the gis format, these files must be in the 
         tiff format
-    ds_short_name:  the name the will appear as header in the output xls file
+    ds_short_name:  the name that will appear as header in the output xls file
     """
     
     if type(ds) is not list:
