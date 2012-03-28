@@ -12,6 +12,7 @@ import numpy as np
 import xlrd
 from Scientific.IO import NetCDF as nc
 import datetime
+import matplotlib.pyplot as plt
 
 class RICHARDS_1D():
     """
@@ -247,7 +248,8 @@ class RICHARDS_1D():
         """
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('output_par')
-        self.ofile_name = str(sheet.cell_value(0,1))
+        j = self.ind['output_par']
+        self.ofile_name = str(sheet.cell_value(j,1))
 
 
     def _colored_output(self, output_message, color):
@@ -325,6 +327,7 @@ class RICHARDS_1D():
         kr = Ks*(pow(Se,l))*pow(1-pow(1-pow(Se,1/m),m),2)
         kr[Se<0] = 0
         kr[Se>1] = Ks
+        
         return kr
     
     def initialize(self):
@@ -333,7 +336,7 @@ class RICHARDS_1D():
         and open the netcdf file for writting
         """
         max_t = int(self.final_time/self.dt_flux)
-        max_t = 56
+        #max_t = 56
         self.max_t = max_t
         self.iter_dt = 1
                         
@@ -391,12 +394,20 @@ class RICHARDS_1D():
         
         #delta_theta = (np.abs(flux)).max()
         
-        self.iter_dt = max(1,int(np.ceil(self.rain_cur/0.02)))
-        print self.iter_dt
+        iter_dt = max(24,int(np.ceil(self.rain_cur*self.dt_flux*1000/0.15)))
+        self.iter_dt = int(max(iter_dt,0.75*self.iter_dt))
+        
+        #if self.t == 56:
+        #    self.iter_dt = int(self.iter_dt*6)
+        #print self.iter_dt
+        
+        recharge_day = 0
+        aet_day = 0
+        
         # check for time step
-        for i in range(2*self.iter_dt):
-            dt = self.dt_flux/self.iter_dt/2.0
-            print dt
+        for i in range(self.iter_dt):
+            dt = self.dt_flux/self.iter_dt
+            #print dt
             # top boundary value
             smi = (self.theta[0]-self.soil_par['evap_0'])/(self.soil_par['evap_1']-self.soil_par['evap_0'])
             if smi<0: smi=0
@@ -466,16 +477,38 @@ class RICHARDS_1D():
             flux = np.diff(J)*dt/dz
             theta = theta - flux
             
-            
-            
+            if theta[0]>thetas:
+                theta[theta>thetas] = 0.99*thetas
+                        
+            aet_day += aet*dt 
+            recharge_day += J[nz]*dt
+                            
         self.theta = theta        
                       
         # write the output
         self.nc_year[self.t] = (self.cur_year)
         self.nc_doy[self.t] = (self.cur_doy)
         self.nc_sm[:,self.t+1] = theta
-        self.nc_recharge[self.t] = J[nz]*dt
-        self.nc_aet[self.t] = aet*dt
+        self.nc_recharge[self.t] = recharge_day
+        self.nc_aet[self.t] = aet_day
+        
+        # print progress
+        if self.t == int(0.25*self.max_t):
+            output_message = '25 % completed'
+            self._colored_output(output_message, 32)
+        
+        elif self.t == int(0.5*self.max_t):
+            output_message = '50 % completed'
+            self._colored_output(output_message, 32)
+        
+        elif self.t == int(0.75*self.max_t):
+            output_message = '75 % completed'
+            self._colored_output(output_message, 32)
+        
+        elif self.t == self.max_t-1:
+            output_message = '100 % completed'
+            self._colored_output(output_message, 32)
+        #print self.t
 
 if __name__=='__main__':
     maddur = RICHARDS_1D('/home/tomer/svn/ambhas/examples/maddur.xls')
@@ -483,8 +516,8 @@ if __name__=='__main__':
     #print output_file.variables
     foo = output_file.variables['sm']
     theta= foo.getValue()
-    print theta[:,-2]
-    print theta[:,-1]
-    
+    #print theta[:,-2]
+    #print theta[:,-1]
+    #plt.plot(theta[:,-1]); plt.plot(theta[:,-2]); plt.show()
     
     
