@@ -134,7 +134,7 @@ class OK:
             model_par: see the vario_model
             model_type: see the vario_model
         """
-        avg_vario = np.empty((len(x), (len(Xg)-1)*(len(Yg)-1)))
+        avg_vario = np.empty((len(self.x), (len(Xg)-1)*(len(Yg)-1)))
         for k in range(len(self.x)):
             
             avg_vario_ens = np.empty((len(Xg)-1, len(Yg)-1))
@@ -275,13 +275,13 @@ if __name__ == "__main__":
     plt.show()
     
     # block kriging
-    #xg = np.linspace(0,1,5)
-    #yg = np.linspace(0,1,8)
-    #foo.block_krige(xg, yg, model_par, model_type = 'exponential')
-    #plt.imshow(foo.s2_k, extent=(0,1,0,1))
-    #plt.imshow(foo.Zg, extent=(0,1,0,1))
-    #plt.matshow(foo.Zg)
-    #plt.matshow(foo.s2_k)
-    #plt.colorbar()
-    #plt.plot(x,y, 'ro')
-    #plt.show()
+    xg = np.linspace(0,1,5)
+    yg = np.linspace(0,1,8)
+    foo.block_krige(xg, yg, model_par, model_type = 'exponential')
+    plt.imshow(foo.s2_k, extent=(0,1,0,1))
+    plt.imshow(foo.Zg, extent=(0,1,0,1))
+    plt.matshow(foo.Zg)
+    plt.matshow(foo.s2_k)
+    plt.colorbar()
+    plt.plot(x,y, 'ro')
+    plt.show()
