@@ -10,7 +10,7 @@ Created on Tue May 24 18:07:28 2011
 # import required libraries
 from __future__ import division
 import numpy as np
-from errlib import rmse
+from ambhas.errlib import rmse
 from scipy.optimize import fmin
 from scipy.stats import poisson
 
@@ -24,7 +24,7 @@ class RainDisagg:
         len_rf = len(rf)
                   
         # take only that much length of rainfall series which is multiplication of 32 
-        rf_1 = rf[0:-np.mod(len_rf,32)]
+        rf_1 = rf[0:len_rf-np.mod(len_rf,32)]
         
         # summing rainfall for 2 days
         rf_2 = np.sum(rf_1.reshape(-1,2), axis=1)
@@ -53,6 +53,7 @@ class RainDisagg:
             M1[4,i] = np.mean(rf_16**(i/2))
             M1[5,i] = np.mean(rf_32**(i/2))
         
+        self.M1 = M1
         self.logM = np.log(M1)
         
         # l is inverse of time scale
