@@ -15,7 +15,7 @@ import datetime
 import matplotlib.pyplot as plt
 from BIP.Bayes.lhs import lhs
 from scipy import stats
-np.seterr(all='raise')
+#np.seterr(all='raise')
 
 class RICHARDS_1D():
     """
@@ -27,7 +27,7 @@ class RICHARDS_1D():
     and then write the output files
     
     """
-    
+     
     def __init__(self,input_file):
         """
         Input:
@@ -300,9 +300,12 @@ class RICHARDS_1D():
         smcf: calculate the smc
         """
         Se = (theta-thetar)/(thetas-thetar)
-        Se[Se<0] = 0.01
-        Se[Se>1] = 1.0
-        smc = alpha*(thetas-thetar)*m*n*pow(Se,1/m+1)*pow(pow(Se,-1/m)-1,m)
+        Se[Se<=0] = 0.0001
+        Se[Se>=1] = 0.9999
+        try:
+            smc = alpha*(thetas-thetar)*m*n*pow(Se,1/m+1)*pow(pow(Se,-1/m)-1,m)
+        except:
+            print thetas,thetar,m,n,Se,
         return smc
     
     def theta2psi(self,theta, thetar, thetas, m, n, alpha):
@@ -310,8 +313,8 @@ class RICHARDS_1D():
         theta2psi: given the theta calculate the psi
         """
         Se = (theta-thetar)/(thetas-thetar)
-        Se[Se<0] = 0.01
-        Se[Se>1] = 1.0
+        Se[Se<=0] = 0.0001
+        Se[Se>=1] = 0.9999
         psi = -(1/alpha)*pow(pow(Se,-1/m)-1,1/n)
         psi[psi<-1e6] = -1e6
         return psi
@@ -320,7 +323,7 @@ class RICHARDS_1D():
          """
          psi2theta: given the theta calculate the pressure head
          """
-         if (psi>0):
+         if (psi>=0):
              theta = thetas
          elif psi<-1e6:
              theta = 1.01*thetar
@@ -333,8 +336,8 @@ class RICHARDS_1D():
         theta2kr: given the theta, calculate the kr 
         """
         Se = (theta-thetar)/(thetas-thetar)
-        Se[Se<0] = 0.01
-        Se[Se>1] = 1.0
+        Se[Se<0] = 0.00001
+        Se[Se>1] = 0.99999
         kr = Ks*(pow(Se,l))*pow(1-pow(1-pow(Se,1/m),m),2)
         kr[Se<0] = 0
         kr[Se>1] = Ks
@@ -573,7 +576,7 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
                 self._unsat_ens()
                 
             # ensemble kalmfan filter
-            self._enkf_par()
+            self._enkf_par_depth()
 
             
             self._write_output()                
@@ -618,7 +621,7 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         """
         # make the state vector which contains the soil moisture at different 
         #depths and soil parameters
-        x = self.theta_ens
+        x = self.theta_ens + 0.0*np.random.normal(size=self.no_layer)
         thetar = self.soil_par_ens['thetar']
         thetas = self.soil_par_ens['thetas']
         alpha = self.soil_par_ens['alpha']
@@ -631,32 +634,40 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         # compute the covariance matrix of the state+par
         X_bar = np.tile(X.mean(axis=0),(10,1))
         X_X_bar = X-X_bar
-        cov_XX = np.dot(X_X_bar.T,X_X_bar)        
+        cov_XX = np.dot(X_X_bar.T,X_X_bar) + 1e-6*np.eye(self.no_layer+6)
+        cov_XX = 0.5*(cov_XX + cov_XX.T)
         
         # get the measurement of the ssm at the current time
         # and generate its ensemble and compute its covariance matrix
         e = np.zeros((self.n_ens, self.no_layer+6))
-        e[:,0] = self.theta_ens[:,0] - self.meas_ssm[self.t]
-        e = e + 0.02*np.random.normal(size=(self.n_ens,self.no_layer+6))
-        cov_ee = np.dot(e.T, e)  
+        e[:,0] = self.meas_ssm[self.t-1] - self.theta_ens[:,0].mean()
+        
+        v = 0.025*np.random.normal(size=(self.n_ens,self.no_layer+6))
+        v = v-np.tile(v.mean(axis=0),(self.n_ens,1))
+        ev = e + v
+        cov_ee = np.dot(e.T, e) + 1e-6*np.eye(self.no_layer+6)
+        cov_ee = 0.5*(cov_ee + cov_ee.T)
         
         # compute kalaman gain
-        K = np.dot(cov_XX,np.linalg.pinv(cov_XX+cov_ee+1e-6*np.eye(self.no_layer+6)))
+        K = np.dot(cov_XX, np.linalg.pinv(cov_XX+cov_ee))
         
         # update the measurment
-        d = np.zeros(self.no_layer+6)
-        usm_par = np.zeros((self.n_ens,self.no_layer+6))
-             
-        for ens in range(self.n_ens):
-            d[0] = self.meas_ssm[self.t] - x[ens,0]
-            usm_par[ens,:] = (X[ens,:] + np.dot(K,d))
-        
+        v = np.random.normal(size=(self.n_ens,))
+        v = v-v.mean()
+        e[:,0] = e[:,0]+0.0005*v
+        K = 0.5*(K + K.T)
+        usm_par = X + np.dot(K,e.T).T      
+        self.usm_par = usm_par
+        #if self.t<=5:
+        #    print self.t, usm_par[:,self.no_layer+4]/soil_par[:,4]
         # check for the range of the updated ensemble
         # soil moisture
         theta_ens = usm_par[:,:self.no_layer]
         theta_ens[theta_ens<0] = 0
         theta_ens[theta_ens>1] = 1
-        self.theta_ens = theta_ens
+        v = 0.01*np.random.normal(size=(theta_ens.shape))
+        v = v-np.tile(v.mean(axis=0),(self.n_ens,1))
+        self.theta_ens = theta_ens + v
         # soil parameters
         thetar = usm_par[:,self.no_layer+0]
         thetas = usm_par[:,self.no_layer+1]
@@ -665,19 +676,35 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         Ks = usm_par[:,self.no_layer+4]
         l = usm_par[:,self.no_layer+5]
         
-        thetar[thetar < self.thetar1] = self.thetar1
-        thetas[thetas < self.thetas1] = self.thetas1
-        alpha[alpha < self.alpha1] = self.alpha1
-        n[n < self.n1] = self.n1
-        Ks[Ks < self.Ks1] = self.Ks1
-        l[l < self.l1] = self.l1
+        # check the convergence limit
+        #thetar[thetar>self.thetar_max] = 1.5*soil_par[:,0]
+        #thetas[thetas>self.thetas_max] = 1.5*soil_par[:,1]
+        #alpha[alpha>self.alpha_max] = 1.5*soil_par[:,2]
+        #n[n>self.n_max] = 1.5*soil_par[:,3]
+        #Ks[Ks>self.Ks_max] = 1.5*soil_par[:,4]
+        #l[l>self.l_max] = 1.5*soil_par[:,5]
         
-        thetar[thetar > self.thetar2] = self.thetar2
-        thetas[thetas > self.thetas2] = self.thetas2
-        alpha[alpha > self.alpha2] = self.alpha2
-        n[n > self.n2] = self.n2
-        Ks[Ks > self.Ks2] = self.Ks2
-        l[l > self.l2] = self.l2
+        #thetar[thetar<self.thetar_min]  = 0.75*soil_par[:,0]
+        #thetas[thetas<self.thetas_min]  = 0.75*soil_par[:,1]
+        #alpha[alpha<self.alpha_min]     = 0.75*soil_par[:,2]
+        #n[n<self.n_min]                 = 0.75*soil_par[:,3]
+        #Ks[Ks<self.Ks_min]              = 0.75*soil_par[:,4]
+        #l[l<self.l_min]                 = 0.75*soil_par[:,5]     
+        
+        thetar[thetar>self.thetar_max] = self.thetar_max
+        thetas[thetas>self.thetas_max] = self.thetas_max
+        alpha[alpha>self.alpha_max] = self.alpha_max
+        n[n>self.n_max] = self.n_max
+        Ks[Ks>self.Ks_max] = self.Ks_max
+        l[l>self.l_max] = self.l_max
+        
+        thetar[thetar<self.thetar_min]  = self.thetar_min
+        thetas[thetas<self.thetas_min]  = self.thetas_min
+        alpha[alpha<self.alpha_min]     = self.alpha_min
+        n[n<self.n_min]                 = self.n_min
+        #Ks[Ks<self.Ks_min]              = self.Ks_min
+        l[l<self.l_min]                 = self.l_min
+        
         
         self.soil_par_ens['thetar'] = thetar
         self.soil_par_ens['thetas'] = thetas
@@ -687,8 +714,122 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         self.soil_par_ens['l'] = l
         
         self.K = K
+        self.cov_ee = cov_ee
+        self.cov_XX = cov_XX
+        
+    def _enkf_par_depth(self):
+        """
+        ensemble kalman filter
+        """
+        # make the state vector which contains the soil moisture at different 
+        #depths and soil parameters
+        x = self.theta_ens + 0.0*np.random.normal(size=self.no_layer)
+        thetar = self.soil_par_ens['thetar']
+        thetas = self.soil_par_ens['thetas']
+        alpha = self.soil_par_ens['alpha']
+        n = self.soil_par_ens['n']
+        Ks = self.soil_par_ens['Ks']
+        l = self.soil_par_ens['l']
+        soil_par = (np.vstack([thetar, thetas, alpha, n, Ks, l])).T
+        X = np.hstack([x, soil_par])
+        
+        # compute the covariance matrix of the state+par
+        X_bar = np.tile(X.mean(axis=0),(10,1))
+        X_X_bar = X-X_bar
+        cov_XX = np.dot(X_X_bar.T,X_X_bar) + 1e-6*np.eye(self.no_layer+6)
+        cov_XX = 0.5*(cov_XX + cov_XX.T)
+        
+        # get the measurement of the ssm at the current time
+        # and generate its ensemble and compute its covariance matrix
+        e = np.zeros((self.n_ens, self.no_layer+6))
+        ev = np.zeros((self.n_ens, self.no_layer+6))
+        obs = np.zeros(self.no_layer)
+        obs =  self.a+self.b*self.meas_ssm[self.t-1]
+        
+        #for i in range(int(self.no_layer/2)):
+        for i in range(20):
+            e[:,i] = obs[i] - self.theta_ens[:,i].mean()
+        self.e = e            
+        for i in range(self.no_layer+6):
+            if i<self.no_layer:
+                ev[:,i] = e[:,i] + 0.005*(i**2+1)*np.random.normal(size=(self.n_ens))
+            else:
+                ev[:,i] = e[:,i] + 0.000025*np.random.normal(size=(self.n_ens))
+        
+        #v = 0.05*np.random.normal(size=(self.n_ens,self.no_layer+6))
+        #v = v-np.tile(v.mean(axis=0),(self.n_ens,1))
+        #ev = e + v
+        cov_ee = np.dot(ev.T, ev) + 1e-6*np.eye(self.no_layer+6)
+        cov_ee = 0.5*(cov_ee + cov_ee.T)
+        
+        # compute kalaman gain
+        K = np.dot(cov_XX, np.linalg.pinv(cov_XX+cov_ee))
+        
+        # update the measurment
+        v = np.random.normal(size=(self.n_ens,))
+        v = v-v.mean()
+        e[:,0] = e[:,0]+0.0005*v
+        K = 0.5*(K + K.T)
+        usm_par = X + np.dot(K,e.T).T      
+        self.usm_par = usm_par
+        #if self.t<=5:
+        #    print self.t, usm_par[:,self.no_layer+4]/soil_par[:,4]
+        # check for the range of the updated ensemble
+        # soil moisture
+        theta_ens = usm_par[:,:self.no_layer]
+        theta_ens[theta_ens<0] = 0
+        theta_ens[theta_ens>1] = 1
+        v = 0.01*np.random.normal(size=(theta_ens.shape))
+        v = v-np.tile(v.mean(axis=0),(self.n_ens,1))
+        self.theta_ens = theta_ens + v
+        # soil parameters
+        thetar = usm_par[:,self.no_layer+0]
+        thetas = usm_par[:,self.no_layer+1]
+        alpha = usm_par[:,self.no_layer+2]
+        n = usm_par[:,self.no_layer+3]
+        Ks = usm_par[:,self.no_layer+4]
+        l = usm_par[:,self.no_layer+5]
+        
+        # check the convergence limit
+        #thetar[thetar>self.thetar_max] = 1.5*soil_par[:,0]
+        #thetas[thetas>self.thetas_max] = 1.5*soil_par[:,1]
+        #alpha[alpha>self.alpha_max] = 1.5*soil_par[:,2]
+        #n[n>self.n_max] = 1.5*soil_par[:,3]
+        #Ks[Ks>self.Ks_max] = 1.5*soil_par[:,4]
+        #l[l>self.l_max] = 1.5*soil_par[:,5]
+        
+        #thetar[thetar<self.thetar_min]  = 0.75*soil_par[:,0]
+        #thetas[thetas<self.thetas_min]  = 0.75*soil_par[:,1]
+        #alpha[alpha<self.alpha_min]     = 0.75*soil_par[:,2]
+        #n[n<self.n_min]                 = 0.75*soil_par[:,3]
+        #Ks[Ks<self.Ks_min]              = 0.75*soil_par[:,4]
+        #l[l<self.l_min]                 = 0.75*soil_par[:,5]     
+        
+        thetar[thetar>self.thetar_max] = self.thetar_max
+        thetas[thetas>self.thetas_max] = self.thetas_max
+        alpha[alpha>self.alpha_max] = self.alpha_max
+        n[n>self.n_max] = self.n_max
+        Ks[Ks>self.Ks_max] = self.Ks_max
+        l[l>self.l_max] = self.l_max
+        
+        thetar[thetar<self.thetar_min]  = self.thetar_min
+        thetas[thetas<self.thetas_min]  = self.thetas_min
+        alpha[alpha<self.alpha_min]     = self.alpha_min
+        n[n<self.n_min]                 = self.n_min
+        Ks[Ks<self.Ks_min]              = self.Ks_min
+        l[l<self.l_min]                 = self.l_min
         
         
+        self.soil_par_ens['thetar'] = thetar
+        self.soil_par_ens['thetas'] = thetas
+        self.soil_par_ens['alpha'] = alpha
+        self.soil_par_ens['n'] = n
+        self.soil_par_ens['Ks'] = Ks
+        self.soil_par_ens['l'] = l
+        
+        self.K = K
+        self.cov_ee = cov_ee
+        self.cov_XX = cov_XX
 
     def initialize(self):
         """
@@ -794,10 +935,33 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         # read the measured data
         self._read_measured() 
         
+        # read a,b for the profile soil moisture relationship
+        self._read_ab()
+        
         # print the reading status
         output_message = 'Input data reading completed sucessfully'
         self._colored_output(output_message, 32)
+    
+    def _read_ab(self):
+        """
+        read the intercept and slope of the relationship of the surface soil 
+        moisture with the profile soil moisture
+        """
+        book = xlrd.open_workbook(self.input_file)
+        sheet = book.sheet_by_name('ab')
         
+        data_len = sheet.nrows-1
+        a = np.zeros(data_len)
+        b = np.zeros(data_len)
+               
+        for i in xrange(data_len):
+            a[i] = sheet.cell_value(i+1,1)
+            b[i] = sheet.cell_value(i+1,2)
+                    
+        self.a = a
+        self.b = b
+        
+    
     def _read_measured(self):
         """
         read the measured surface soil moisture (ssm) data
@@ -824,25 +988,33 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('initial_condition')
         theta_0 = sheet.cell_value(j,1)
-        self.theta_ens = np.tile(theta_0,(self.n_ens,self.no_layer))    
+        self.theta_ens = theta_0 + 0.05*np.random.normal(size=(self.n_ens,self.no_layer))
     
     def _read_shp_ens(self):
         """
         read the information about the ensemble of the soil hydraulic parameters
-        the information being read is the min, max, perturbation factore (%)
+        the information being read is the min, max, best estimate and its uncertainty
+        
         """
         #get the row number from the ind
         j = self.ind['soil_hyd_par_ens']
         
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('soil_hyd_par_ens')
+        self.thetar_min, self.thetar_max = sheet.cell_value(j+1,1), sheet.cell_value(j+1,7)
+        self.thetas_min, self.thetas_max = sheet.cell_value(j+1,2), sheet.cell_value(j+1,8)
+        self.alpha_min, self.alpha_max = sheet.cell_value(j+1,3), sheet.cell_value(j+1,9)
+        self.n_min, self.n_max = sheet.cell_value(j+1,4), sheet.cell_value(j+1,10)
+        self.Ks_min, self.Ks_max = sheet.cell_value(j+1,5), sheet.cell_value(j+1,11)
+        self.l_min, self.l_max = sheet.cell_value(j+1,6), sheet.cell_value(j+1,12)
+        
         shp_ens = {}
-        shp_ens['thetar'] = sheet.cell_value(j,1), sheet.cell_value(j,7)
-        shp_ens['thetas'] = sheet.cell_value(j,2), sheet.cell_value(j,8)
-        shp_ens['alpha']  = sheet.cell_value(j,3), sheet.cell_value(j,9)
-        shp_ens['n']      = sheet.cell_value(j,4), sheet.cell_value(j,10)
-        shp_ens['Ks']     = sheet.cell_value(j,5), sheet.cell_value(j,11)
-        shp_ens['l']      = sheet.cell_value(j,6), sheet.cell_value(j,12)
+        shp_ens['thetar'] = sheet.cell_value(j+1,13), sheet.cell_value(j+1,19)
+        shp_ens['thetas'] = sheet.cell_value(j+1,14), sheet.cell_value(j+1,20)
+        shp_ens['alpha']  = sheet.cell_value(j+1,15), sheet.cell_value(j+1,21)
+        shp_ens['n']      = sheet.cell_value(j+1,16), sheet.cell_value(j+1,22)
+        shp_ens['Ks']     = sheet.cell_value(j+1,17), sheet.cell_value(j+1,23)
+        shp_ens['l']      = sheet.cell_value(j+1,18), sheet.cell_value(j+1,24)
                 
         self.shp_ens = shp_ens
     
@@ -854,44 +1026,51 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         this also computes the perturbation needed to perturb the parameters
         which is done in another function
         """
-        # i means min, 2 means maximum
-        thetar1, thetar2 = self.shp_ens['thetar']
-        thetas1, thetas2 = self.shp_ens['thetas']
-        alpha1, alpha2 = self.shp_ens['alpha']
-        n1, n2 = self.shp_ens['n']
-        l1, l2 = self.shp_ens['l']
-        Ks1, Ks2 = self.shp_ens['Ks']
-        self.thetar1 = thetar1; self.thetar2 = thetar2 
-        self.thetas1 = thetas1; self.thetas2 = thetas2  
-        self.alpha1 = alpha1; self.alpha2 = alpha2  
-        self.n1 = n1; self.n2 = n2  
-        self.Ks1 = Ks1; self.Ks2 = Ks2  
-        self.l1 = l1; self.l2 = l2  
+               
+        #gaussian perturbation
+        v = np.random.normal(size=(self.n_ens,6))
+        v = v-np.tile(v.mean(axis=0),(self.n_ens,1))
+        thetar = self.shp_ens['thetar'][0]  + v[:,0]*self.shp_ens['thetar'][1]
+        thetas = self.shp_ens['thetas'][0]  + v[:,1]*self.shp_ens['thetas'][1]
+        alpha = self.shp_ens['alpha'][0]    + v[:,2]*self.shp_ens['alpha'][1]
+        n = self.shp_ens['n'][0]            + v[:,3]*self.shp_ens['n'][1]
+        Ks = self.shp_ens['Ks'][0]          + v[:,4]*self.shp_ens['Ks'][1]
+        l = self.shp_ens['l'][0]            + v[:,5]*self.shp_ens['l'][1]
+
+        # check for the range of generated parameters
+        thetar[thetar>self.thetar_max] = self.thetar_max
+        thetas[thetas>self.thetas_max] = self.thetas_max
+        alpha[alpha>self.alpha_max] = self.alpha_max
+        n[n>self.n_max] = self.n_max
+        Ks[Ks>self.Ks_max] = self.Ks_max
+        l[l>self.l_max] = self.l_max
         
-        v = lhs(stats.uniform,[],siz=(self.n_ens,6))
+        thetar[thetar<self.thetar_min]  = self.thetar_min
+        thetas[thetas<self.thetas_min]  = self.thetas_min
+        alpha[alpha<self.alpha_min]     = self.alpha_min
+        n[n<self.n_min]                 = self.n_min
+        Ks[Ks<self.Ks_min]              = self.Ks_min
+        l[l<self.l_min]                 = self.l_min
+        
         soil_par_ens = {}
-        soil_par_ens['thetar'] = thetar1 + (thetar2-thetar1)*v[:,0]
-        soil_par_ens['thetas'] = thetas1 + (thetas2-thetas1)*v[:,1]
-        soil_par_ens['alpha'] = alpha1 + (alpha2-alpha1)*v[:,2]
-        soil_par_ens['n'] = n1 + (n2-n1)*v[:,3]
-        soil_par_ens['l'] = l1 + (l2-l1)*v[:,4]
-        # for KS it is log-uniform
-        log_Ks1 = np.log10(Ks1)
-        log_Ks2 = np.log10(Ks2)
-        soil_par_ens['Ks'] = 10**(log_Ks1 + (log_Ks2-log_Ks1)*v[:,5])
-        #soil_par_ens['Ks'] = Ks1 + (Ks2-Ks1)*v[:,5]
+        soil_par_ens['thetar'] = thetar
+        soil_par_ens['thetas'] = thetas
+        soil_par_ens['alpha'] = alpha
+        soil_par_ens['n'] = n
+        soil_par_ens['Ks'] = Ks
+        soil_par_ens['l'] = l
         
         self.soil_par_ens = soil_par_ens
         
         #perturbation parameter
         soil_pert = {}
-        soil_pert['thetar'] = (thetar2-thetar1)*0.5/100.0
-        soil_pert['thetas'] = (thetas2-thetas1)*0.5/100.0
-        soil_pert['alpha'] =  (alpha2-alpha1)*0.5/100.0
-        soil_pert['n'] =      (n2-n1)*0.5/100.0
-        soil_pert['l'] =      (l2-l1)*0.5/100.0
-        #soil_pert['Ks'] = 10**(log_Ks1 + (log_Ks2-log_Ks1)*0.01/100.0)
-        soil_pert['Ks'] = (Ks2-Ks1)*0.5/100.0
+        soil_pert['thetar'] = (self.thetar_max - self.thetar_min)*0.1/100.0
+        soil_pert['thetas'] = (self.thetas_max - self.thetas_min)*0.1/100.0
+        soil_pert['alpha'] =  (self.alpha_max - self.alpha_min)*0.1/100.0
+        soil_pert['n'] =      (self.n_max - self.n_min)*0.1/100.0
+        soil_pert['Ks'] =     (self.Ks_max - self.Ks_min)*0.1/100.0
+        soil_pert['l'] =      (self.l_max - self.l_min)*0.1/100.0
+        
         self.soil_pert = soil_pert
 
     def _perturb_soil_par_ens(self):
@@ -900,14 +1079,37 @@ class RICHARDS_1D_ENKF(RICHARDS_1D):
         using the gaussian random variables
         """
         v = np.random.normal(size=(self.n_ens,6))
+        v = v-np.tile(v.mean(axis=0),(self.n_ens,1))
+        thetar = self.soil_par_ens['thetar']+self.soil_pert['thetar']*v[:,0]
+        thetas = self.soil_par_ens['thetas']+self.soil_pert['thetas']*v[:,1]
+        alpha = self.soil_par_ens['alpha']+self.soil_pert['alpha']*v[:,2]
+        n = self.soil_par_ens['n']+self.soil_pert['n']*v[:,3]
+        Ks = self.soil_par_ens['Ks']+self.soil_pert['Ks']*(v[:,4]-v[:,4].mean())
+        l = self.soil_par_ens['l']+self.soil_pert['l']*v[:,5]
         
+
+        # check for the range of generated parameters
+        thetar[thetar>self.thetar_max] = self.thetar_max
+        thetas[thetas>self.thetas_max] = self.thetas_max
+        alpha[alpha>self.alpha_max] = self.alpha_max
+        n[n>self.n_max] = self.n_max
+        Ks[Ks>self.Ks_max] = self.Ks_max
+        l[l>self.l_max] = self.l_max
+        
+        thetar[thetar<self.thetar_min]  = self.thetar_min
+        thetas[thetas<self.thetas_min]  = self.thetas_min
+        alpha[alpha<self.alpha_min]     = self.alpha_min
+        n[n<self.n_min]                 = self.n_min
+        Ks[Ks<self.Ks_min]              = self.Ks_min
+        l[l<self.l_min]                 = self.l_min        
+
         soil_par_ens = {}
-        soil_par_ens['thetar'] = self.soil_par_ens['thetar']+self.soil_pert['thetar']*v[:,0]
-        soil_par_ens['thetas'] = self.soil_par_ens['thetas']+self.soil_pert['thetas']*v[:,1]
-        soil_par_ens['alpha'] = self.soil_par_ens['alpha']+self.soil_pert['alpha']*v[:,2]
-        soil_par_ens['n'] = self.soil_par_ens['n']+self.soil_pert['n']*v[:,3]
-        soil_par_ens['l'] = self.soil_par_ens['l']+self.soil_pert['l']*v[:,4]
-        soil_par_ens['Ks'] = self.soil_par_ens['Ks']+self.soil_pert['Ks']*v[:,5]
+        soil_par_ens['thetar'] = thetar
+        soil_par_ens['thetas'] = thetas
+        soil_par_ens['alpha'] = alpha
+        soil_par_ens['n'] = n
+        soil_par_ens['Ks'] = Ks
+        soil_par_ens['l'] = l        
         
         self.soil_par_ens = soil_par_ens
 
