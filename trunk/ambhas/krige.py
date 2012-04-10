@@ -141,7 +141,7 @@ class OK:
             for i in range(len(Xg)-1):
                 for j in range(len(Yg)-1):
                     Xg_rand = Xg[i]+np.random.rand(10)*(Xg[i+1]-Xg[i])
-                    Yg_rand = Yg[j]+np.random.rand(10)*(Yg[j+1]-Yg[i])    
+                    Yg_rand = Yg[j]+np.random.rand(10)*(Yg[j+1]-Yg[j])    
 
                     DOR = ((self.x[k] - Xg_rand)**2 + (self.y[k] - Yg_rand)**2)**0.5
                     avg_vario_ens[i,j] = self.vario_model(DOR, model_par, model_type).mean()
@@ -266,22 +266,22 @@ if __name__ == "__main__":
     plt.plot(lags, G, 'k')
     plt.show()
     
-    Rx = np.linspace(-1,1)
-    Ry = np.linspace(0,1)
+    Rx = np.linspace(-1,1,1050)
+    Ry = np.linspace(0,1,750)
     XI,YI = np.meshgrid(Rx,Ry)
     foo.krige(XI, YI, model_par, 'exponential')
     
-    plt.matshow(foo.Zg.reshape(50,50))
+    plt.matshow(foo.Zg.reshape(750,1050))
     plt.show()
     
-    # block kriging
-    xg = np.linspace(0,1,5)
-    yg = np.linspace(0,1,8)
-    foo.block_krige(xg, yg, model_par, model_type = 'exponential')
-    plt.imshow(foo.s2_k, extent=(0,1,0,1))
-    plt.imshow(foo.Zg, extent=(0,1,0,1))
-    plt.matshow(foo.Zg)
-    plt.matshow(foo.s2_k)
-    plt.colorbar()
-    plt.plot(x,y, 'ro')
-    plt.show()
+#    # block kriging
+#    xg = np.linspace(0,1,5)
+#    yg = np.linspace(0,1,8)
+#    foo.block_krige(xg, yg, model_par, model_type = 'exponential')
+#    plt.imshow(foo.s2_k, extent=(0,1,0,1))
+#    plt.imshow(foo.Zg, extent=(0,1,0,1))
+#    plt.matshow(foo.Zg)
+#    plt.matshow(foo.s2_k)
+#    plt.colorbar()
+#    plt.plot(x,y, 'ro')
+#    plt.show()
