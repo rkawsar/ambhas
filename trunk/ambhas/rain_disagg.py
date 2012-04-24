@@ -74,6 +74,15 @@ class RainDisagg:
         # of tau function
         self.A = np.exp(self.lp[0]*(1-self.lp[1]))
 
+    def tau_predict(self):
+        q = np.arange(0.5,5.5,0.5)
+        c = abs(self.lp[0])
+        beta = abs(self.lp[1])
+        b = 2
+        tau_pred = q-c*(q*(1-beta)+beta**q-1)/(np.log(b))
+        self.tau_pred = tau_pred
+        self.q = q
+
     #define the log-poisson function
     def fun_poisson(self,par):
         q = np.arange(0.5,5.5,0.5)
@@ -87,15 +96,17 @@ class RainDisagg:
     def disaggregate(self,rf):
         len_rf = len(rf)        
         # generating rainfall from t h to t/2 h
-        rf_pre = np.zeros((2,len_rf*2))
-        for j in range(2):
+        rf_pre = np.zeros((1,len_rf*2))
+        for j in range(1):
             for i in xrange(0,len_rf*2,2):
                 W = self.A*(self.lp[1])**poisson.rvs(1, size=2)
+                W[W<0] = 1e-6
                 rf_pre[j,i] = rf[int(i/2)]*W[0]/(W[0]+W[1])
-                rf_pre[j,i+1] = rf[int(i/2)]*W[1]/(W[0]+W[1])
+                rf_pre[j,i+1] = rf[int(i/2)]*W[1]/(W[0]+W[1])              
+                             
         
         rf_pre = np.mean(rf_pre, axis=0)
-
+        
         # rounding up the simulated rainfall to the least count of raingauge 
         for i in xrange(0,len_rf*2,2):
             if np.mod(rf_pre[i],0.5) !=0:
@@ -105,6 +116,8 @@ class RainDisagg:
             
             rf_pre[i] -= TB
             rf_pre[i+1] += TB
+            
+            
         
         return rf_pre
 
