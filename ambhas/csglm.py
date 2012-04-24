@@ -17,7 +17,7 @@ import gdal
 from gdalconst import *
 from scipy.interpolate import Rbf
 from Scientific.IO import NetCDF as nc
-
+np.seterr(all='raise')
 
 class CSGLM:
     """
@@ -179,6 +179,11 @@ class CSGLM:
         
         self.no_layer = no_layer
         self.z = z
+        #mid depth of the layers
+        depth = np.zeros(no_layer+1)
+        depth[1:] = np.cumsum(z)
+        self.mid_z = 0.5*(depth[1:]+depth[:-1])
+        
     
     def _read_temporal(self):
         """
@@ -202,13 +207,14 @@ class CSGLM:
         sheet = book.sheet_by_name('root_info')
         #get the row number from the ind
         j = self.ind['root_info']
-        root_frac = np.array(sheet.row_values(j,1))
-          
-        if self.no_layer != len(root_frac):
-            raise ValueError('The length of the root_frac should be\
-            equal to the no_layer')
-        self.root_frac = root_frac
-    
+        self.ndvi_max = sheet.cell_value(j,1)
+        self.ndvi_min = sheet.cell_value(j,2)
+        self.fapar_max = sheet.cell_value(j,3)
+        self.lai_max = sheet.cell_value(j,4)
+        self.Rd_max = sheet.cell_value(j,5)
+        self.Lrd = sheet.cell_value(j,6)
+  
+            
     def _read_units(self):
         """
         read the units of the forcing data
@@ -257,8 +263,9 @@ class CSGLM:
         soil_par['n'] = sheet.cell_value(j,4)
         soil_par['Ks'] = sheet.cell_value(j,5)
         soil_par['l'] = sheet.cell_value(j,6)
-        soil_par['evap_0'] = sheet.cell_value(j,7)
-        soil_par['evap_1'] = sheet.cell_value(j,8)
+        soil_par['evap_wp'] = sheet.cell_value(j,7)
+        soil_par['evap_fc'] = sheet.cell_value(j,8)
+        soil_par['zl'] = sheet.cell_value(j,9)
         self.soil_par = soil_par
     
     def _read_runoff_par(self):
@@ -300,10 +307,8 @@ class CSGLM:
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('ET_par')
         ET_par = {}
-        ET_par['trans_1'] = sheet.col_values(j,1)
-        ET_par['trans_2'] = sheet.col_values(j,2)
-        ET_par['trans_3'] = sheet.col_values(j,3)
-        ET_par['trans_4'] = sheet.col_values(j,4)
+        ET_par['trans_fc'] = sheet.cell_value(j,1)
+        ET_par['trans_wp'] = sheet.cell_value(j,2)
         self.ET_par = ET_par
     
     def _read_forcing(self):
@@ -318,7 +323,7 @@ class CSGLM:
         doy = np.zeros(data_len)
         rain = np.zeros(data_len)
         pet = np.zeros(data_len)
-        lai = np.zeros(data_len)
+        ndvi = np.zeros(data_len)
         pumping = np.zeros(data_len)
     
         for i in xrange(data_len):
@@ -326,9 +331,8 @@ class CSGLM:
             doy[i] = sheet.cell_value(i+1,1)
             rain[i] = sheet.cell_value(i+1,2)
             pet[i] = sheet.cell_value(i+1,3)
-            lai[i] = sheet.cell_value(i+1,4)
+            ndvi[i] = sheet.cell_value(i+1,4)
             pumping[i] = sheet.cell_value(i+1,5)
-        
         
         self.year = year
         self.doy = doy
@@ -354,9 +358,29 @@ class CSGLM:
             self.pumping = pumping
         else:
             raise ValueError("The units of pumping should be either 'mm' or 'm' ")
-            
-        self.lai = lai        
         
+        # compute the fractional vegetation cover, rooting depth and lai
+        ndvi_max = self.ndvi_max
+        ndvi_min = self.ndvi_min
+        ndvi[ndvi>ndvi_max] = ndvi_max
+        ndvi[ndvi<ndvi_min] = ndvi_min
+        
+        fapar = 1.60*ndvi-0.02
+        fapar_max = self.fapar_max
+        
+        lai_max = self.lai_max
+        lai = lai_max*np.log(1-fapar)/np.log(1-fapar_max)
+        
+        Rd_max = self.Rd_max  
+        Rd = Rd_max*lai/lai_max
+        fc = ((ndvi-ndvi_max)/(ndvi_max-ndvi_min))**2
+        
+        self.kc = 0.8+0.4*(1-np.exp(-0.7*lai))
+        self.ndvi = ndvi
+        self.lai = lai        
+        self.Rd = Rd
+        self.fc = fc
+               
 
     def _read_ofile_name(self):
         """
@@ -400,8 +424,9 @@ class CSGLM:
         """
         this will give the forcing at time t
         """
+        # the PET is multiplied by crop coefficient
         self.rain_cur = self.rain[self.t]
-        self.pet_cur = self.pet[self.t]
+        self.pet_cur = self.pet[self.t]*self.kc[self.t]
         self.lai_cur = self.lai[self.t]
         self.pumping_cur = self.pumping[self.t]
         
@@ -423,7 +448,7 @@ class CSGLM:
             net_rain_cur:   Net rainfall (precipitation-interception loss) at 
             current time step
         """
-        In = 0.005
+        In = self.lai[self.t]*0.2/1000.0
         soil_cover = np.exp(-0.5*self.lai_cur)
         veg_cover = 1 - soil_cover
         
@@ -490,16 +515,20 @@ class CSGLM:
         for i in range(self.no_layer):
             if i<self.no_layer-1:
                 # using the maximum value of theta
-                #K[i], D[i] = shp(max(theta_0[i],theta_0[i+1]),soil_par)
+                #K[i], D[i] = self._shp(max(self.sm[i,self.t],self.sm[i+1, self.t]))
                 # using the arithmatic mean of theta
                 K[i], D[i] = self._shp(0.5*(self.sm[i, self.t]+self.sm[i+1, self.t]))
             else:
                 K[i], D[i] = self._shp(self.sm[i,self.t])
+        K = K.flatten()*np.exp(-self.mid_z/self.soil_par['zl'])
+        D = D.flatten()*np.exp(-self.mid_z/self.soil_par['zl'])
         
-        # calculate stress in soil moisture 
+        # calculate stress in soil moisture and subsequently the actual 
+        # evaporation and transpiration
         self._smi_fun()
         AE = self.evap*self.SSMI
-        AT = self.RZSMI*self.root_frac*self.trans
+        self._transpiration_fun()
+        AT = self.AT 
                 
         # set up the A and U matrix
         A = np.zeros((self.no_layer, self.no_layer))
@@ -533,7 +562,8 @@ class CSGLM:
             # convert recharge from L/T to L
             Re = K[-1]*self.dt
             
-            # remove the water as hortonian runoff, if the soil moisture exceeds saturation
+            # remove the water as hortonian runoff, 
+            # if the soil moisture exceeds saturation
             if theta_1[0] >= self.soil_par['f']:
                 HR = (theta_1[0]-self.soil_par['f'])*z[0]
                 theta_1[0] = self.soil_par['f']
@@ -546,8 +576,8 @@ class CSGLM:
             self.F = F
             self.theta_1 = theta_1
             self.recharge[self.t] = Re
-            self.actual_evap[self.t] = AE
-            self.actual_trans[self.t] = AT.sum()
+            self.actual_evap[self.t] = AE*self.dt
+            self.actual_trans[self.t] = AT.sum()*self.dt
             self.horton_runoff[self.t] = HR
             
     def _smi_fun(self):
@@ -557,8 +587,8 @@ class CSGLM:
         """
         
         # calculate surface soil moisture index
-        SSMI = (self.sm[0,self.t] - self.soil_par['evap_0'])/(
-                self.soil_par['evap_1'] - self.soil_par['evap_0'])
+        SSMI = (self.sm[0,self.t] - self.soil_par['evap_wp'])/(
+                self.soil_par['evap_fc'] - self.soil_par['evap_wp'])
         
         if SSMI > 1: 
             SSMI = 1
@@ -569,19 +599,42 @@ class CSGLM:
         RZSMI = np.zeros((self.no_layer,))
         
         for i in range(self.no_layer):
-            if (self.sm[i,self.t] < self.ET_par['trans_4']) | (self.sm[i,self.t] > self.ET_par['trans_1']):
+            if (self.sm[i,self.t] < self.ET_par['trans_wp']):
                 RZSMI[i] = 0
-            elif self.sm[i,self.t] > self.ET_par['trans_2']:
-                RZSMI[i] = (self.sm[i,self.t]-ET_par['trans_1'])/(self.ET_par['trans_2']\
-                - ET_par['trans_1'])
-            elif self.sm[i,self.t] < self.ET_par['trans_3']:
-                RZSMI[i] = (theta[i,0]-self.ET_par['trans_4'])/(self.ET_par['trans_3']\
-                - ET_par['trans_4'])
-            else:
+            elif self.sm[i,self.t] > self.ET_par['trans_fc']:
                 RZSMI[i] = 1
+            else:
+                
+                RZSMI[i] = (self.sm[i,self.t]-self.ET_par['trans_wp'])/(self.ET_par['trans_fc']\
+                - self.ET_par['trans_wp'])
+            
         
         self.SSMI = SSMI
         self.RZSMI = RZSMI
+    
+    
+    def _transpiration_fun(self):
+        """
+        this function computes the actual transpiration for all the soil layers
+        """
+        # root distribution
+        Lrd = self.Lrd
+        Rd = self.Rd[self.t]
+        r_density = np.empty(self.no_layer)
+        for i in range(self.no_layer):
+            if i==0:
+                z1 = 0
+            else:
+                z1 = np.sum(self.z[:i])
+            z2 = np.sum(self.z[:i+1])
+            if z2>Rd:
+                z2 = Rd
+            if z1>z2:
+                z1 = z2
+            r_density[i] = np.exp(-z1/Lrd) - np.exp(-z2/Lrd)
+        r_density = r_density/( 1 - np.exp(-Rd/Lrd) )
+        
+        self.AT = self.RZSMI*r_density*self.trans
     
 
     def _shp(self, theta):
@@ -614,8 +667,8 @@ class CSGLM:
         G = self.gw_par['G']
         hmin = self.gw_par['hmin']
         
-        self.lam = (1-F)**2/G
-        self.sy = (1-F)/G
+        self.sy = F/G
+        self.lam = (1-F)*self.sy
         
         # net input = recharge - discharge
         u = self.recharge[self.t]-self.pumping_cur 
@@ -659,8 +712,11 @@ class CSGLM:
         sheet.write(0,5,'pumping')
         sheet.write(0,6,'actual evap')
         sheet.write(0,7,'actual trans')
-        sheet.write(0,8,'AET')
-        sheet.write(0,9,'recharge')
+        sheet.write(0,8,'E_In')
+        sheet.write(0,9,'AET')
+        sheet.write(0,10,'recharge')
+        sheet.write(0,11,'runoff')
+        
         # write the data    
         for i in range(self.max_t):
             sheet.write(i+1,0,self.year[i])
@@ -671,8 +727,10 @@ class CSGLM:
             sheet.write(i+1,5,self.pumping[i])
             sheet.write(i+1,6,self.actual_evap[i])
             sheet.write(i+1,7,self.actual_trans[i])
-            sheet.write(i+1,8,self.actual_evap[i]+self.actual_trans[i])
-            sheet.write(i+1,9,self.recharge[i])
+            sheet.write(i+1,8,self.E_In[i])
+            sheet.write(i+1,9,self.actual_evap[i]+self.actual_trans[i]+self.E_In[i])
+            sheet.write(i+1,10,self.recharge[i])
+            sheet.write(i+1,11,self.runoff[i])
             
             
         wbk.save(self.ofile_name)
