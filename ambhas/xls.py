@@ -14,6 +14,11 @@ class xlsread():
     """
     A class to read data from xls file
     based on the 'xlrd'
+    
+    Example:
+            fname = '/home/tomer/rain_projection/raw_data/a2_0.5.xls'
+            foo = xlsread(fname)
+            var = foo.get_cells('a3:a5', 'Sheet1')
     """
     
     def __init__(self, fname):
@@ -85,6 +90,15 @@ class xlsread():
 
 
 class xlswrite():
+    """
+    This saves the array in xls format
+
+    Example:
+    var = np.array([[5,10,12],[2,5,6]])
+    foo1 = xlswrite(var, 'f10', 'Sheet1')
+    fname = '/home/tomer/data.xls'
+    foo1.save(fname)
+    """
     
     def __init__(self, data, cell_start, sheet):
         self.data = data

@@ -1626,6 +1626,6 @@ if __name__=='__main__':
     #output_file = nc.NetCDFFile(maddur_ens.ofile_name, 'r')
     #foo = output_file.variables['sm'][:,0,:]
     
-    maddur_glue = RICHARDS_1D_GLUE('/home/tomer/richards/input/maddur_glue_18.xls')
+    maddur_glue = RICHARDS_1D_GLUE('/home/tomer/richards/input/maddur_glue_57.xls')
     
     
