@@ -95,7 +95,7 @@ class xlswrite():
 
     Example:
     var = np.array([[5,10,12],[2,5,6]])
-    foo1 = xlswrite(var, 'f10', 'Sheet1')
+    xls_out_file = xlswrite(var, 'f10', 'Sheet1')
     fname = '/home/tomer/data.xls'
     foo1.save(fname)
     """
@@ -149,7 +149,49 @@ class xlswrite():
             col = (col+1)*26+ ord(foo_str)-ord('a')
         
         return row,col
-        
+
+
+class xlswrite2(xlswrite):
+    """
+    This saves the array in xls format
+
+    Example:
+    var = np.array([[5,10,12],[2,5,6]])
+    fname = '/home/tomer/data.xls'    
+    xls_out_file = xlswrite(fname)
+    xls_out_file.write(var, 'f10', 'Sheet1')
+    xls_out_file.save()
+    """
+    
+    def __init__(self, fname):
+        self.fname = fname
+                
+        # initialize the xlwt     
+        self.book = xlwt.Workbook()
+    
+    def write(self, data, cell_start, sheet):
+        sheet = book.add_sheet(sheet)
+
+        # convert into row and col        
+        row, col = self.__cell2ind__(cell_start)
+
+        if isinstance(data, str)  or isinstance(data, float) or isinstance(data,int):
+            sheet.write(row,col,data)
+                
+        if data.ndim == 1:
+            for i in range(data.shape[0]):
+                sheet.write(row+i,col, data[i])
+                
+        else:
+            for i in range(data.shape[0]):
+                for j in range(data.shape[1]):
+                    sheet.write(row+i, col+j, data[i,j])
+
+    
+    def save(self):
+        self.book.save(self.fname)
+
+
 if __name__ == "__main__":
     
     # read the data
