@@ -17,12 +17,7 @@ from scipy.optimize import fmin
 import sys
 import statistics as st
 from scipy.interpolate import interp1d
-
-#from scipy.stats import *
-#import random as R
-#from pylab import*
-#from scipy.interpolate import interp1d
-
+from stats import scoreatpercentile
 
 class Copula():
     """
@@ -186,9 +181,64 @@ class Copula():
         # estimate X1 and Y1        
         X1 = self._inv_cdf_x(self.U)
         Y1 = self._inv_cdf_y(self.V)
+        self.X1 = X1
+        self.Y1 = Y1
         
         return X1, Y1
+
+    def estimate(self, data=None):
+        """
+        this function estimates the mean, std, iqr for the generated
+        ensemble
+
+        Output:
+            Y1_mean = mean of the simulated ensemble
+            Y1_std = std of the simulated ensemble
+            Y1_ll = lower limit of the simulated ensemble
+            Y1_ul = upper limit of the simulated ensemble
+        """
+        nbin = 50
+        #check if already the generate_xy has been called,
+        #if not called, call now
+        try:
+            self.X1
+            copula_ens = len(self.X1)
+        except:
+            copula_ens = 10000
+            self.generate_xy(copula_ens)
         
+        if data is None:
+            data = self.X
+        
+        n_ens = copula_ens/nbin #average no. of bin in each class
+        ind_sort = self.X1.argsort()
+        x_mean = np.zeros((nbin,))
+        y_mean = np.zeros((nbin,))
+        y_ul = np.zeros((nbin,))
+        y_ll = np.zeros((nbin,))
+        y_std = np.zeros((nbin,))
+    
+        for ii in range(nbin):
+            x_mean[ii] = self.X1[ind_sort[n_ens*ii:n_ens*(ii+1)]].mean()
+            y_mean[ii] = self.Y1[ind_sort[n_ens*ii:n_ens*(ii+1)]].mean()
+            y_std[ii] = self.Y1[ind_sort[n_ens*ii:n_ens*(ii+1)]].std()
+            y_ll[ii] = scoreatpercentile(self.Y1[ind_sort[n_ens*ii:n_ens*(ii+1)]], 25)
+            y_ul[ii] = scoreatpercentile(self.Y1[ind_sort[n_ens*ii:n_ens*(ii+1)]], 75)
+            
+        foo_mean = interp1d(x_mean, y_mean, bounds_error=False)
+        foo_std = interp1d(x_mean, y_std, bounds_error=False)
+        foo_ll = interp1d(x_mean, y_ll, bounds_error=False)
+        foo_ul = interp1d(x_mean, y_ul, bounds_error=False)
+        
+        
+        Y1_mean = foo_mean(data)
+        Y1_std = foo_std(data)
+        Y1_ll = foo_ll(data)
+        Y1_ul = foo_ul(data)
+        
+        return Y1_mean, Y1_std, Y1_ll, Y1_ul
+        
+   
         
     def _inverse_cdf(self):
         """
