@@ -1,0 +1,13 @@
+#summary Documentation for the stics.py file
+
+= stics.py =
+
+
+
+== Detailed Description ==
+
+
+
+
+---
+|| [ambhas Main Page] || [ambhas_files Files] ||

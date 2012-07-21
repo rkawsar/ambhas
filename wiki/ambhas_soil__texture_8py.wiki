@@ -1,0 +1,13 @@
+#summary Documentation for the soil_texture.py file
+
+= soil_texture.py =
+
+
+
+== Detailed Description ==
+
+
+
+
+---
+|| [ambhas Main Page] || [ambhas_files Files] ||

@@ -1,0 +1,13 @@
+#summary Documentation for the richards.py file
+
+= richards.py =
+
+
+
+== Detailed Description ==
+
+
+
+
+---
+|| [ambhas Main Page] || [ambhas_files Files] ||

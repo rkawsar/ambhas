@@ -1,0 +1,13 @@
+#summary Documentation for the easy_gw_1d.py file
+
+= easy_gw_1d.py =
+
+
+
+== Detailed Description ==
+
+
+
+
+---
+|| [ambhas Main Page] || [ambhas_files Files] ||

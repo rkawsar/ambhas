@@ -1,0 +1,13 @@
+#summary Documentation for the krige.py file
+
+= krige.py =
+
+
+
+== Detailed Description ==
+
+
+
+
+---
+|| [ambhas Main Page] || [ambhas_files Files] ||
