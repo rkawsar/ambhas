@@ -1,0 +1,11 @@
+<map id="G" name="G">
+<area shape="rect" id="node3" href="$namespaceambhas_1_1errlib.html#aab46db41db5d488730ef0af3b219c9be" title="ambhas.errlib.pc_bias" alt="" coords="219,5,368,35"/>
+<area shape="rect" id="node5" href="$namespaceambhas_1_1errlib.html#ae08c6ef2f2c6a2543c32de17a8062b44" title="ambhas.errlib.apb" alt="" coords="231,59,356,88"/>
+<area shape="rect" id="node7" href="$namespaceambhas_1_1errlib.html#a6644b1f966f2f5f2f2e7be6002ccb225" title="ambhas.errlib.rmse" alt="" coords="227,112,360,141"/>
+<area shape="rect" id="node11" href="$namespaceambhas_1_1errlib.html#acc6d92cecfb3602c020c2b300acf6ce1" title="ambhas.errlib.mae" alt="" coords="229,165,357,195"/>
+<area shape="rect" id="node13" href="$namespaceambhas_1_1errlib.html#a62cd87e9b43a60d0b6ba57fd56a6e411" title="ambhas.errlib.bias" alt="" coords="229,219,357,248"/>
+<area shape="rect" id="node15" href="$namespaceambhas_1_1errlib.html#aa2a75f914abacee0e008abcb2fcdfe73" title="ambhas.errlib.NS" alt="" coords="232,272,355,301"/>
+<area shape="rect" id="node17" href="$namespaceambhas_1_1errlib.html#a87bd160952d99f375f6db2e41e69d013" title="ambhas.errlib.L" alt="" coords="239,325,348,355"/>
+<area shape="rect" id="node19" href="$namespaceambhas_1_1errlib.html#a90d7ed508dc9771874d835ff6d1d916c" title="ambhas.errlib.correlation" alt="" coords="212,379,375,408"/>
+<area shape="rect" id="node9" href="$classambhas_1_1rain__disagg_1_1RainDisagg.html#a950a4d1cdae7a50557e568a6084951f1" title="ambhas.rain_disagg.RainDisagg.fun_poisson" alt="" coords="425,112,708,141"/>
+</map>
