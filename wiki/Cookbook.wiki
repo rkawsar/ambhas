@@ -1,7 +1,7 @@
 # Cookbook 
 
-#sidebar TableOfContents
-* [Copula Copula]
+#sidebar TableOfContents 
+* [Copula Copula] 
   * [clayton Clayton]
   * [Frank Frank]
   * [Gumbel Gumbel]
