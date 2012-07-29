@@ -1,11 +1,11 @@
 # Cookbook 
 
 #sidebar TableOfContents 
-* [Copula Copula] 
+ * [Copula Copula] 
   * [clayton Clayton]
   * [Frank Frank]
   * [Gumbel Gumbel]
-* [CSGLM CSGLM]
+ * [CSGLM CSGLM]
 * [easy_gw_1d easy_gw_1d]
 * [errlib errlib]
 * [extract_gis_data Extract Gis Data]
