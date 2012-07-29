@@ -1,4 +1,4 @@
-# Cookbook 
+#summary Cookbook
 # sidebar TableOfContents 
 
  * [Copula Copula] 
