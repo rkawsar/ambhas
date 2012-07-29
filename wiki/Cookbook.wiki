@@ -22,9 +22,9 @@
 
 [Copula#Copula]
 
-[WikiSyntax#Wiki-style_markup]
-
 = Wiki-style markup =
+
+[WikiSyntax#Wiki-style_markup]
 
 = Copula =
 [Copula]
