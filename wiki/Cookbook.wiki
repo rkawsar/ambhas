@@ -1,6 +1,6 @@
 # Cookbook 
+# sidebar TableOfContents 
 
-#sidebar TableOfContents 
  * [Copula Copula] 
    * [clayton Clayton]
    * [Frank Frank]
