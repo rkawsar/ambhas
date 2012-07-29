@@ -1,7 +1,7 @@
 #summary Cookbook
 #sidebar TableOfContents
 
-= Wiki Syntax =
+= Content =
 <wiki:toc max_depth="2" />
 
  * [Copula Copula] 
@@ -30,4 +30,8 @@
 [WikiSyntax#Wiki-style_markup]
 
 = Copula =
+
+== Clayton ==
+== Frank ==
+== Gumbel ==
 [Copula]
