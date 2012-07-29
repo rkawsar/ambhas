@@ -22,5 +22,5 @@
 
 [Copula#Copula_copula]
 
-= Copula copula =
+= Copula =
 [Copula]
