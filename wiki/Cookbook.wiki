@@ -1,6 +1,9 @@
 #summary Cookbook
 #sidebar TableOfContents
 
+= Wiki Syntax =
+<wiki:toc max_depth="2" />
+
  * [Copula Copula] 
    * [clayton Clayton]
    * [Frank Frank]
