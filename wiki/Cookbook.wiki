@@ -20,6 +20,6 @@
  * [sunlib sunlib]
  * [xls xls]
 
-[Copula#Copula]
+[Copula#Copula_copula]
 
-= Copula =
+= Copula copula =
