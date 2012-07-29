@@ -20,4 +20,4 @@
  * [sunlib sunlib]
  * [xls xls]
 
-[Copula#copula]
+[Copula#Copula]
