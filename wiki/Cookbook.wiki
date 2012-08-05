@@ -5,10 +5,15 @@
 <wiki:toc max_depth="2" />
 
 = Copula =
-This provides access to three copulas, namely, Clayton, Frank and Gumbel.
+Copula is a function to couple two CDFs. In this library the following three copulas, which are from Archimedean family, are used: 
 
 == Clayton ==
+This copula 
+
+http://code.google.com/images/code_sm.png
+
 == Frank ==
+
 == Gumbel ==
 
 = csglm =
