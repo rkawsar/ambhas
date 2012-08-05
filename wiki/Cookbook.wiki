@@ -5,9 +5,13 @@
 <wiki:toc max_depth="2" />
 
 = Copula =
-Copula is a function to couple two CDFs. In this library the following three copulas, which are from Archimedean family, are used: 
+Copula is a function to couple two CDFs. The library is called using
+{{{
+ambhas.copula
+}}}
+The library has three copulas namely Clayton, Frank and Gumbel.
 
-== Clayton ==
+== Estimate parameters of copula from the measured data ==
 This copula 
 
 http://code.google.com/images/code_sm.png
