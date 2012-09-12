@@ -14,7 +14,7 @@ from scipy.interpolate import interp1d
 from scipy.stats import norm, chi2
 from scipy.stats import scoreatpercentile
 
-def bias_correction(oc, mc, mp):
+def bias_correction(oc, mc, mp, nonzero = True):
     """
     Input:
         oc: observed current
@@ -36,11 +36,19 @@ def bias_correction(oc, mc, mp):
     # interp1d is used to invert the CDF.
     
     F_oc, OC = st.cpdf(oc, n=1000)
+    if nonzero:
+        OC[OC<0] = 0
+        
     f = interp1d(F_oc, OC)
     
     F1 = st.cpdf(mc, mp)
     mp_adjusted = f(F1)
     
+    if nonzero:
+        mp_adjusted[mp_adjusted>0] = mp_adjusted[mp_adjusted>0] + np.sum(
+        mp_adjusted[mp_adjusted<0])/(np.sum(mp_adjusted>0))
+        mp_adjusted[mp_adjusted<0] = 0
+        
     return mp_adjusted
 
 
