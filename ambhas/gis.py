@@ -135,7 +135,7 @@ def berambadi(Ifile,Ofile):
         print 'temp file not created'
         
  
-def geogedic_area(lon_cen, size_cell):
+def geodetic_area(lon_cen, size_cell):
 	"""
 	Compute the area in square meters given the longitude of the 
 	center and size of the grid 
@@ -148,16 +148,39 @@ def geogedic_area(lon_cen, size_cell):
 		size_cell: size of the cell in the degree
 	
 	output:
-		area: are of the square grid
+		area: area of the square grid
 
 	"""
 	r = 6371229.0 # radius of earth in meters
-	area = r**2*np.abs(0.125)*np.pi/180*np.abs(
+	area = r**2*np.abs(size_cell)*np.pi/180*np.abs(
 			np.sin((lon_cen-size_cell/2.0)*np.pi/180) - \
 			np.sin((lon_cen+size_cell/2.0)*np.pi/180))
 			
 	return area
+
+
+def latitude_length(latitude):
+	"""
+	computes the length of one degree of a latitude
+	"""
+	a = 6378137.0
+	b = 6356752.3142
+	e = np.sqrt((a**2 - b**2)/a**2)
+	length = np.pi*a*(1-e**2)/(180*(1-e**2*np.sin(latitude*np.pi/180.0)**2)**1.5)
 	
+	return length
+
+def longitude_length(longitude):
+	"""
+	computes the length of one degree of a longitude
+	"""
+	a = 6378137.0
+	b = 6356752.3142
+	e = np.sqrt((a**2 - b**2)/a**2)
+	length = np.pi*a*np.cos(longitude*np.pi/180)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**0.5)
+	
+	return length
+
 
 if __name__ == '__main__':
 	
@@ -165,10 +188,30 @@ if __name__ == '__main__':
 	lon_cen = np.linspace(-90,90)
 	size = 1
 	
-	area = geogedic_area(lon_cen, size)
-	area1 = geogedic_area(lon_cen, size/8.0)
+	area = geodetic_area(lon_cen, size)
+	area1 = geodetic_area(lon_cen, size/1.0)
 
 	plt.plot(lon_cen, area1/1e6)
+	plt.xlabel('Latitude (degree)')
+	plt.ylabel('Area of a degree square (Sq. km)')
 	plt.show()
-
-
+	
+	# length of latitude and longitude
+	latitude = np.linspace(0,90)
+	len_lat = latitude_length(latitude)
+	longitude = np.linspace(0,90)
+	len_lon = longitude_length(longitude)
+	
+	ax1 = plt.subplot(111)
+	plt.plot(latitude, len_lat/1000, 'b-', label='Latitude')
+	ax1.set_xlabel('Latitude/Longitude (degree)')
+	ax1.set_ylabel('Length of a degree Latitude (km)', color='b')
+	for tl in ax1.get_yticklabels():
+		tl.set_color('b')
+		                
+	ax2 = plt.twinx()
+	ax2.plot(longitude, len_lon/1000, 'r--')
+	for tl in ax2.get_yticklabels():
+		tl.set_color('r')
+	ax2.set_ylabel('Length of a degree Longitude (km)', color='r')
+	plt.show()
