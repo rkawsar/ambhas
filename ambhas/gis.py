@@ -18,6 +18,7 @@ import os
 from subprocess import call
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 def utm2image(GT,utm):
     Xpixel = ((utm[:,0] - GT[0])*GT[5] - (utm[:,1] - GT[3])*GT[2])/(GT[1]*GT[5]-GT[4]*GT[2])
@@ -132,4 +133,42 @@ def berambadi(Ifile,Ofile):
         os.remove(Temp2)
     except:
         print 'temp file not created'
+        
+ 
+def geogedic_area(lon_cen, size_cell):
+	"""
+	Compute the area in square meters given the longitude of the 
+	center and size of the grid 
+	
+	The grid should be square in terms of degree i.e. the size of the 
+	cell should not vary in latitude and longitude
+	
+	input:
+		lon_cen: longitude of the center of grid
+		size_cell: size of the cell in the degree
+	
+	output:
+		area: are of the square grid
+
+	"""
+	r = 6371229.0 # radius of earth in meters
+	area = r**2*np.abs(0.125)*np.pi/180*np.abs(
+			np.sin((lon_cen-size_cell/2.0)*np.pi/180) - \
+			np.sin((lon_cen+size_cell/2.0)*np.pi/180))
+			
+	return area
+	
+
+if __name__ == '__main__':
+	
+	#generate the area of the square grid globally with 1 degree resolution
+	lon_cen = np.linspace(-90,90)
+	size = 1
+	
+	area = geogedic_area(lon_cen, size)
+	area1 = geogedic_area(lon_cen, size/8.0)
+
+	plt.plot(lon_cen, area1/1e6)
+	plt.show()
+
 
