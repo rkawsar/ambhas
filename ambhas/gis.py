@@ -166,7 +166,7 @@ def latitude_length(longitude):
 	a = 6378137.0
 	b = 6356752.3142
 	e = np.sqrt((a**2 - b**2)/a**2)
-	length = np.pi*a*(1-e**2)/(180*(1-e**2*np.sin(latitude*np.pi/180.0)**2)**1.5)
+	length = np.pi*a*(1-e**2)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**1.5)
 	
 	return length
 
@@ -177,7 +177,7 @@ def longitude_length(longitude):
 	a = 6378137.0
 	b = 6356752.3142
 	e = np.sqrt((a**2 - b**2)/a**2)
-	length = np.pi*a*np.cos(latitude*np.pi/180)/(180*(1-e**2*np.sin(latitude*np.pi/180.0)**2)**0.5)
+	length = np.pi*a*np.cos(longitude*np.pi/180)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**0.5)
 	
 	return length
 
