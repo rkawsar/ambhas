@@ -135,3 +135,17 @@ def correlation(s,o):
     s,o = filter_nan(s,o)
     return np.corrcoef(o, s)[0,1]
 
+
+def index_agreement(s,o):
+    """
+	index of agreement
+	input:
+        s: simulated
+        o: observed
+    output:
+        ia: index of agreement
+    """
+    s,o = filter_nan(s,o)
+    ia = 1 -(np.sum((o-s)**2))/(np.sum(
+    			(np.abs(s-np.mean(o))+np.abs(o-np.mean(o)))**2))
+    return ia
