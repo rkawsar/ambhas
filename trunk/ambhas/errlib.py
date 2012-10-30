@@ -34,7 +34,7 @@ def filter_nan(s,o):
     this is used by all other functions, otherwise they will produce nan as 
     output
     """
-    data = np.array([s,o])
+    data = np.array([s.flatten(),o.flatten()])
     data = np.transpose(data)
     data = data[~np.isnan(data).any(1)]
     return data[:,0],data[:,1]
