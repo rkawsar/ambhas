@@ -1,0 +1,10 @@
+#summary Using Pythong at Windows and Linux
+#sidebar TableOfContents
+
+= Content =
+<wiki:toc max_depth="2" />
+
+= Windows =
+Currently I am using Python 2.7 and Spyder as IDE. The way to insall them is given here. If you want to use some other version of Python or some other IDE, the procedure should not be much different. 
+
+First download Python 2.7.3 [http://www.python.org/download/releases/2.7.3/]. 
