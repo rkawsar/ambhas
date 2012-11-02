@@ -1,4 +1,4 @@
-#summary Using Pythong at Windows and Linux
+#summary Using Python at Windows and Linux
 #sidebar TableOfContents
 
 = Content =
@@ -7,4 +7,6 @@
 = Windows =
 Currently I am using Python 2.7 and Spyder as IDE. The way to insall them is given here. If you want to use some other version of Python or some other IDE, the procedure should not be much different. 
 
-First download Python 2.7.3 [http://www.python.org/download/releases/2.7.3/]. 
+First download Python 2.7.3 [http://www.python.org/download/releases/2.7.3/]. Download the version that suits you. I know there are many options and is confusing for a beginner. I think most of the computers are now 64 bit, even if it is not true, you can safely start with it. The version I downloaded is [http://www.python.org/ftp/python/2.7.3/python-2.7.3.amd64.msi].
+
+Now, lets download the Spyder that is suitable for Python 2.7 from [http://code.google.com/p/spyderlib/downloads/list]. I downloaded the  [http://spyderlib.googlecode.com/files/spyder-2.1.11_py27.exe].
