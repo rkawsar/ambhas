@@ -48,7 +48,7 @@ Process RADARSAT-2 data.
 Rainfall disaggregation model based on the random multiplicative cascade (RMC) approach.
 
 = richards =
-Numerical solution of Richards' equation in python.
+This module provides the numerical solution of Richards' equation in python. The description about Richards' equation can be found in [http://en.wikipedia.org/wiki/Richards_equation]. 
 
 = soil_texture =
 Provides the soil type and soil hydraulic properties based on pedotransfer function given the percentage of sand, silt and clay.
