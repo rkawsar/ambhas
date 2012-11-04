@@ -11,3 +11,15 @@ Lets install the Spyder that has Python 2.7. The ways of installation are given 
 
 
 Python comes automatically with the Spyder, but for some reason if you want it separately, you can download it from [http://www.python.org/download/releases/2.7.3/]. Download the version that suits you. I know there are many options and is confusing for a beginner. I think most of the computers are now 64 bit, even if it is not true, you can safely start with it. The version I downloaded is [http://www.python.org/ftp/python/2.7.3/python-2.7.3.amd64.msi].
+
+
+= First Program =
+To check if python and Spyder is installed properly, first open the Spyder, and then inside it run the following code.
+{{{
+import getpass
+username = getpass.getuser()
+print("hello to %s! Python in Spyder is working"%username)
+}}}
+
+
+
