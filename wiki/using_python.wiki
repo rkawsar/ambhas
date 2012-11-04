@@ -20,6 +20,5 @@ import getpass
 username = getpass.getuser()
 print("hello to %s! Python in Spyder is working"%username)
 }}}
-
-
+If you get an error message after running this, please report here.
 
