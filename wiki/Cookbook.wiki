@@ -50,6 +50,30 @@ Rainfall disaggregation model based on the random multiplicative cascade (RMC) a
 = richards =
 This module provides the numerical solution of Richards' equation in python. The description about Richards' equation can be found in [http://en.wikipedia.org/wiki/Richards_equation]. 
 
+This module reads the input from a xls file, run the module and write the output into netcdf format. The example xls file is given in the examples subdirectory by the name maddur.xls. Lets first plot the rainfall and PET from the input file.
+{{{
+import matplotlib.pyplot as plt
+from ambhas.xls import xlsread
+
+in_file = 'maddur.xls'
+xls_file = xlsread(in_file)
+doy = xls_file.get_cells('B2:B366','forcing')
+rain = xls_file.get_cells('C2:C366','forcing')
+pet = xls_file.get_cells('D2:D366','forcing')
+
+plt.clf()
+plt.bar(doy,rain, color='m', edgecolor='m', label='Rainfall')
+plt.plot(pet, label='PET')
+plt.grid(True)
+plt.legend()
+plt.xlabel('DOY')
+plt.ylabel('mm')
+plt.savefig('output/richards_forcing.png')
+}}}
+The resulted graph is:
+https://code.google.com/p/ambhas/source/browse/trunk/examples/output/richards_forcing.png
+
+
 = soil_texture =
 Provides the soil type and soil hydraulic properties based on pedotransfer function given the percentage of sand, silt and clay.
 
