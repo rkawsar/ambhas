@@ -71,7 +71,7 @@ plt.ylabel('mm')
 plt.savefig('output/richards_forcing.png')
 }}}
 The resulted graph is:
-https://code.google.com/p/ambhas/source/browse/trunk/examples/output/richards_forcing.png
+http://ambhas.googlecode.com/svn/wiki/images/myimage.png
 
 
 = soil_texture =
