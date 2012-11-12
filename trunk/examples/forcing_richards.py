@@ -8,7 +8,6 @@ Created on Sun Nov 11 11:53:27 2012
 this scripts plots the forcing for the richards' input file
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 from ambhas.xls import xlsread
 
@@ -25,7 +24,7 @@ plt.grid(True)
 plt.legend()
 plt.xlabel('DOY')
 plt.ylabel('mm')
-plt.savefig('output/richards_forcing.png')
+plt.savefig('../wiki/images/richards_forcing.png')
 
 #from ambhas.richards import RICHARDS_1D
 
