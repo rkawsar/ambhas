@@ -162,6 +162,30 @@ Notice that that input is latitudes in both the cases. Closer to the equator the
 ==Read/Write ASCII Grid file==
 ASCII/Esri grid file (http://en.wikipedia.org/wiki/Esri_grid) is used by various program to write the gis data. 
 
+{{{
+fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid.grd'
+data, header = read_ascii_grid(fname)
+print data
+print header
+}}}
+The print output is:
+{{{
+[[  nan   nan    5.    2.]
+ [  nan   20.  100.   36.]
+ [   3.    8.   35.   10.]
+ [  32.   42.   50.    6.]
+ [  88.   75.   27.    9.]
+ [  13.    5.    1.   nan]]
+{'ncols': 4, 'cellsize': 50.0, 'nrows': 6, 'xllcorner': 0.0, 'yllcorner': 0.0, 'NODATA_value': -9999}
+}}}
+
+Same way the data can be written in ascii format. The header data (e.g. ncols, cellsize etc.) should be in dictionary format.
+{{{
+fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid_out.grd'
+write_ascii_grid(fname, data, header)
+}}}
+
+
 
 = gw =
 Groundwater model.
