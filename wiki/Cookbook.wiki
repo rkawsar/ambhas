@@ -132,6 +132,9 @@ frame.set_alpha(0.5)
 plt.savefig('/home/tomer/svn/ambhas-wiki/images/run_richards.png')
 
 }}} 
+The resulted graph is:
+
+http://ambhas.googlecode.com/svn/wiki/images/run_richards.png
 
 
 = soil_texture =
