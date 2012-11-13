@@ -66,26 +66,102 @@ This provides some simple error indices e.g. rmse, bias, NS coefficient etc.
 
 {{{
 #generate two random variable
-    obs = np.random.normal(size=100)    
-    sim = np.random.normal(size=100)  
-    
-    # print error indices
-    print(pc_bias(sim,obs))
-    print(apb(sim,obs)) 
-    print(rmse(sim,obs)) 
-    print(mae(sim,obs)) 
-    print(bias(sim,obs)) 
-    print(NS(sim,obs)) 
-    print(L(sim,obs))
-    print(correlation(sim,obs))
+obs = np.random.normal(size=100)    
+sim = np.random.normal(size=100)  
+   
+# print error indices
+print(pc_bias(sim,obs))
+print(apb(sim,obs)) 
+print(rmse(sim,obs)) 
+print(mae(sim,obs)) 
+print(bias(sim,obs)) 
+print(NS(sim,obs)) 
+print(L(sim,obs))
+print(correlation(sim,obs))
 }}}
 
 
 = extract gis data =
 Useful for extracting data over few locations from multiple gis file.
+The script is written to extract the data from multiple points in the monitoring plots and then compute median and std over them. This becomes quiet useful when the shape of the monitoring plots is not regular. For instance see the monitoring plot below:
+
+http://ambhas.googlecode.com/svn/wiki/images/data_extraction.png
+
+The points are generated at 5 m interval in both (x and y) direction. 
+The blue line shows the boundary of the plot. The + marks are the points inside the plot, on which data is extracted.
+
+One example xls file for the monitoring field co-ordinate is given in example directory by the file name "plots_66.xls", which is for the 66 monitoring plots of AMBHAS project. 
+
+Lets say you want to extract the data from all the images inside the directory for these 66 plots. 
+
+{{{
+# import required libraries
+from ambhas.extract_gis_data import extract_gis
+import os
+
+# location of files
+in_dir = '/home/tomer/RADARSAT/bc/'
+out_file = '/home/tomer/RADARSAT/output/bc.xls'
+
+# get the name of the files in the input directory
+# if you want only one file, or some selected files in the directory
+# you can provide the name of those files as a list in this variable
+in_files = os.listdir(in_dir)
+in_files.sort()
+
+# starting letters of the address for the RADARSAT files
+ds_in = []
+n = len(in_files)
+for i in range(n):
+    in_file = in_dir + in_files[i]
+      
+    ds_in.append(in_file)
+   
+xls_in = '/home/tomer/berambadi/plots_66/plots_66.xls'
+
+    
+extract_gis(xls_in, out_file, ds_in, in_files)
+}}}
+The output will be saved in the out_file (a xls file) defined by you. The columns represents the different images. Row represents the different monitoring plots.
 
 = gis =
 Some GIS tool e.g. conversion of coordinate system from latlong to UTM.
+
+==UTM to latlon==
+{{{
+x = 60000
+y = 1200000
+lat,lon = utm2deg(x,y,utmzone=43)
+}}}
+
+==latlon to UTM ==
+{{{
+lat = 71
+lon = 11
+x,y = deg2utm(lat,lon,utmzone=43)
+}}}
+
+==Compute the area in square meters given the longitude of the center and size of the grid ==
+{{{
+lat = 11
+size_cell = 0.125
+geodetic_area(11,0.5)
+}}}
+The output is in square meter.
+
+==Length of one degree of latitude and longitude for different latitudes==
+
+{{{
+>>> latitude_length(11)
+110614.71345469992
+>>> longitude_length(11)
+109287.5573212734
+}}}
+Notice that that input is latitudes in both the cases. Closer to the equator the length of one degree of latitude and longitude becomes nearly equal. As you move away form the equator towards the pole, the length of latitude remain nearly same, however the longitude starts decreasing. 
+
+==Read/Write ASCII Grid file==
+ASCII/Esri grid file (http://en.wikipedia.org/wiki/Esri_grid) is used by various program to write the gis data. 
+
 
 = gw =
 Groundwater model.
