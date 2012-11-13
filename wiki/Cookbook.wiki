@@ -11,8 +11,6 @@ ambhas.copula
 }}}
 The library has three copulas namely Clayton, Frank and Gumbel.
 
-== Estimate parameters of copula from the measured data ==
-
 {{{
 # import the required libraries
 import numpy as np
@@ -49,10 +47,39 @@ In the similar way 'frank' and 'gumbel' copula can also be used.
     CSGLM (Coupled Surface-Ground water Lumped Model) is a model developed for modelling linkage between surface and groundwater.
 
 = easy_gw_1d =
-This is an easy implementation of the one dimensional groundwater model. This data is pass to the module using the xls file and the output is also written in xls. You need not to know Python for using this module.
+This is an easy implementation of the one dimensional groundwater model. The data is passed to the module using the xls file and the output is also written in xls. 
+
+{{{
+in_file = '/home/tomer/svn/ambhas/examples/input_easy_gw.xls'
+out_file = '/home/tomer/svn/ambhas/examples/output/easy_gw.xls'    figure_dir = '/home/tomer/svn/ambhas-wiki/images/'
+foo = gw_model_file(in_file, out_file, figure_dir)
+}}}
+Each worksheet in the input file is for each of the monitoring well. You can model as many as well you want by providing separate worksheet for them. You can fit the simulated groundwater level with the observed one by modifying the parameters. For the default parameters the output is:
+
+http://ambhas.googlecode.com/svn/wiki/images/berambadi.png
+
+The output file by the model are provided only for quick comparison. You can use the output xls file to make a better plot for your work.
+
 
 = errlib =
 This provides some simple error indices e.g. rmse, bias, NS coefficient etc.
+
+{{{
+#generate two random variable
+    obs = np.random.normal(size=100)    
+    sim = np.random.normal(size=100)  
+    
+    # print error indices
+    print(pc_bias(sim,obs))
+    print(apb(sim,obs)) 
+    print(rmse(sim,obs)) 
+    print(mae(sim,obs)) 
+    print(bias(sim,obs)) 
+    print(NS(sim,obs)) 
+    print(L(sim,obs))
+    print(correlation(sim,obs))
+}}}
+
 
 = extract gis data =
 Useful for extracting data over few locations from multiple gis file.
