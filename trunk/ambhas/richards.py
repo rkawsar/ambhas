@@ -10,7 +10,7 @@ Created on Mon Mar 12 17:41:54 2012
 from __future__ import division
 import numpy as np
 import xlrd
-from Scientific.IO import NetCDF as nc
+from scipy.io import netcdf as nc
 import datetime
 import matplotlib.pyplot as plt
 from BIP.Bayes.lhs import lhs
@@ -379,8 +379,10 @@ class RICHARDS_1D():
         self.nc_sm.units = 'v/v'
         self.nc_sm[:,0] = self.theta
         
-        # recharge and aet
+        # rainfall, recharge and aet
         varDims = 'time',
+        self.nc_rain = file.createVariable('rain','d',varDims)
+        self.nc_rain.units = 'mm'
         self.nc_aet = file.createVariable('aet','d',varDims)
         self.nc_aet.units = 'mm'
         self.nc_recharge = file.createVariable('recharge','d',varDims)
@@ -512,6 +514,7 @@ class RICHARDS_1D():
         self.nc_sm[:,self.t+1] = theta
         self.nc_recharge[self.t] = recharge_day
         self.nc_aet[self.t] = aet_day
+        self.nc_rain[self.t] = self.rain_cur
         
         # print progress
         if self.t == int(0.25*self.max_t):
@@ -1592,6 +1595,7 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         self.nc_sm[self.ens,:,self.t+1] = theta
         self.nc_recharge[self.ens,self.t] = recharge_day
         self.nc_aet[self.ens,self.t] = aet_day
+        self.nc_rain[self.t] = self.rain_cur
         
         # print progress
         if self.t == int(0.25*self.max_t):
@@ -1613,7 +1617,7 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         
 if __name__=='__main__':
      
-    #maddur = RICHARDS_1D('/home/tomer/richards/input/maddur.xls')
+    maddur = RICHARDS_1D('/home/tomer/svn/ambhas/examples/maddur.xls')
     #output_file = nc.NetCDFFile(maddur.ofile_name, 'r')
     #print output_file.variables
     #foo = output_file.variables['sm']
@@ -1626,6 +1630,6 @@ if __name__=='__main__':
     #output_file = nc.NetCDFFile(maddur_ens.ofile_name, 'r')
     #foo = output_file.variables['sm'][:,0,:]
     
-    maddur_glue = RICHARDS_1D_GLUE('/home/tomer/richards/input/maddur_glue_57.xls')
+    #maddur_glue = RICHARDS_1D_GLUE('/home/tomer/richards/input/maddur_glue_57.xls')
     
     

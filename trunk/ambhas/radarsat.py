@@ -15,6 +15,16 @@ import scipy.signal
 
 
 class calibrate:
+    """
+    radar_in_dir = '/home/tomer/radarsat' # directory of the product.xml file
+    radar_file = radar.calibrate(radar_in_dir)
+    radar_file.speckle_filter('median',7)
+    radar_file.speckle_filter('wiener',7)
+    
+    radar_out_file = '/home/tomer/radarsat/product.tif'
+    radar_file.save_tiff(radar_out_file)
+    """
+    
     def __init__(self,inpath):
         
         self.inpath = inpath
