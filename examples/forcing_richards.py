@@ -24,16 +24,5 @@ plt.grid(True)
 plt.legend()
 plt.xlabel('DOY')
 plt.ylabel('mm')
-plt.savefig('../wiki/images/richards_forcing.png')
+plt.savefig('../../ambhas-wiki/images/richards_forcing.png')
 
-#from ambhas.richards import RICHARDS_1D
-
-
-#maddur = RICHARDS_1D('/home/tomer/richards/input/maddur.xls')
-#output_file = nc.NetCDFFile(maddur.ofile_name, 'r')
-#print output_file.variables
-#foo = output_file.variables['sm']
-#theta= foo.getValue()
-#print theta[:,-2]
-#print theta[:,-1]
-#plt.plot(theta[:,-1]); plt.plot(theta[:,-2]); plt.show()
