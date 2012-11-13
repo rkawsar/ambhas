@@ -12,13 +12,38 @@ ambhas.copula
 The library has three copulas namely Clayton, Frank and Gumbel.
 
 == Estimate parameters of copula from the measured data ==
-This copula 
 
-http://code.google.com/images/code_sm.png
+{{{
+# import the required libraries
+import numpy as np
+from ambhas.copula import Copula  
+import matplotlib.pyplot as plt
 
-== Frank ==
+# generate some pseudo observations
+x = np.random.uniform(size=(100))
+y = np.log(x) + 0.5*np.random.normal(size=(100))
 
-== Gumbel ==
+# use the copula
+foo = Copula(x, y, 'clayton')
+foo.tau
+
+# generate ensemble using copula
+x1,y1 = foo.generate_xy()
+
+# plot the ensemble along with observations
+plt.figure(figsize=(6, 4.5))
+plt.scatter(x1,y1, color='g', label='Generated ensemble')  
+plt.scatter(x,y, color='r', label='Observations')  
+plt.xlabel('x')  
+plt.ylabel('y')
+plt.legend(loc='best')
+plt.savefig('/home/tomer/svn/ambhas-wiki/images/copula.png')  
+
+}}}
+
+http://ambhas.googlecode.com/svn/wiki/images/copula.png
+
+In the similar way 'frank' and 'gumbel' copula can also be used.
 
 = csglm =
     CSGLM (Coupled Surface-Ground water Lumped Model) is a model developed for modelling linkage between surface and groundwater.
