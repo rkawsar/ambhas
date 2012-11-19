@@ -263,22 +263,33 @@ def write_ascii_grid(fname, data, header, dtype='float'):
 	return 0
 
 if __name__ == '__main__':
-	
-	# test the sample 
-	fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid.grd'
-	data, header = read_ascii_grid(fname)
-	#print header
-	
-	#plt.matshow(data)
-	#plt.show()
-	
-	# write the sample
-	fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid_out.grd'
-	write_ascii_grid(fname, data, header)
-	
-	#generate the area of the square grid globally with 1 degree resolution
-	#lon_cen = np.linspace(-90,90)
-	#size = 1
+    # from utm to degree
+    x = 60000
+    y = 1200000
+    lat,lon = utm2deg(x,y,utmzone=43)
+    print(lat,lon)
+    # from degree to utm
+    x,y = deg2utm(lat,lon,utmzone=43)
+    
+    print(x,y)
+ 
+
+    # test the sample 
+    fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid.grd'
+    data, header = read_ascii_grid(fname)
+    print data    
+    print header
+    
+    #plt.matshow(data)
+    #plt.show()
+    
+    # write the sample
+    fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid_out.grd'
+    write_ascii_grid(fname, data, header)
+    
+    #generate the area of the square grid globally with 1 degree resolution
+    #lon_cen = np.linspace(-90,90)
+    #size = 1
 	
 	#area = geodetic_area(lon_cen, size)
 	#area1 = geodetic_area(lon_cen, size/1.0)

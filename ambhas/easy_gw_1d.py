@@ -96,11 +96,10 @@ def gw_model_file(in_fname, out_fname, figure_dir=None):
         
         if figure_dir is not None:
             # save the figure
-            fig = tpl.tsfigure()
-            fsp = fig.add_tsplot(111)
-            fsp.tsplot(gw_meas_series, 'r', lw=3, label='measured')
-            fsp.tsplot(gw_sim_series, 'g', lw=3, label='simulated')
-            fsp.legend(loc='best')
+            fig = plt.figure(figsize=(6, 4.5))
+            plt.plot(gw_meas_series, 'r', lw=3, label='measured')
+            plt.plot(gw_sim_series, 'g', lw=3, label='simulated')
+            plt.legend(loc='best')
             plt.ylabel('Groundwater Level' )
             plt.savefig(figure_dir+'%s.png'%sheet_name)
             plt.close()
@@ -109,3 +108,10 @@ def gw_model_file(in_fname, out_fname, figure_dir=None):
     
     # save the xls file
     out_book.save(out_fname)
+
+if __name__=='__main__':
+    in_file = '/home/tomer/svn/ambhas/examples/input_easy_gw.xls'
+    out_file = '/home/tomer/svn/ambhas/examples/output/easy_gw.xls'
+    figure_dir = '/home/tomer/svn/ambhas-wiki/images/'
+    foo = gw_model_file(in_file, out_file, figure_dir)
+    
