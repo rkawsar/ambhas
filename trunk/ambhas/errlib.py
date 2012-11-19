@@ -149,3 +149,18 @@ def index_agreement(s,o):
     ia = 1 -(np.sum((o-s)**2))/(np.sum(
     			(np.abs(s-np.mean(o))+np.abs(o-np.mean(o)))**2))
     return ia
+
+if __name__=='__main__':
+    #generate two random variable
+    obs = np.random.normal(size=100)    
+    sim = np.random.normal(size=100)  
+    
+    # print error indices
+    print(pc_bias(sim,obs))
+    print(apb(sim,obs)) 
+    print(rmse(sim,obs)) 
+    print(mae(sim,obs)) 
+    print(bias(sim,obs)) 
+    print(NS(sim,obs)) 
+    print(L(sim,obs))
+    print(correlation(sim,obs))

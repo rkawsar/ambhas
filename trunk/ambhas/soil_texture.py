@@ -17,8 +17,8 @@ import numpy as np
 class soil_texture:
     """
     Input:
-        sand
-        clay
+        sand: percentage sand
+        clay: percentage clay
     output:
         
     """
@@ -70,17 +70,27 @@ class soil_texture:
         
         for i in range(12):
             exec("if nx.pnpoly(sand, clay, t0):tt=i").replace('0',str(i))
-    
-        if sand+clay<100:
-            self.soil_type = soil_names[tt]
-            self.theta_r = shp[tt][1]
-            self.theta_s = shp[tt][3]
-            self.alpha = 10**shp[tt][5]*100
-            self.n = 10**shp[tt][7]
-            self.ks= np.exp(shp[tt][9])/100/86400
-            self.l= shp[tt][13]
+        
+        if ~np.isnan(sand*clay):
+            if sand+clay<100:
+                self.soil_type = soil_names[tt]
+                self.theta_r = shp[tt][1]
+                self.theta_s = shp[tt][3]
+                self.alpha = 10**shp[tt][5]*100
+                self.n = 10**shp[tt][7]
+                self.ks= np.exp(shp[tt][9])/100/86400
+                self.l= shp[tt][13]
+            else:
+                print("sand+clay is more than 100 percent")
+                self.soil_type = np.nan
+                self.theta_r = np.nan
+                self.theta_s = np.nan
+                self.alpha = np.nan
+                self.n = np.nan
+                self.ks= np.nan
+                self.l= np.nan
         else:
-            print("sand+clay is more than 100 percent")
+            print("sand or clay contains nan")
             self.soil_type = np.nan
             self.theta_r = np.nan
             self.theta_s = np.nan
@@ -88,3 +98,11 @@ class soil_texture:
             self.n = np.nan
             self.ks= np.nan
             self.l= np.nan
+            
+            
+if __name__=='__main__':
+    sand = np.nan
+    clay = 10
+    
+    foo = soil_texture(sand,clay)
+    print foo.theta_r
