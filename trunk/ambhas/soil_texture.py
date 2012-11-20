@@ -22,7 +22,7 @@ class soil_texture:
     output:
         
     """
-    def __init__(self, sand, clay):
+    def __init__(self, sand, clay, warning=True):
         self.sand = sand
         self.clay = clay
         
@@ -30,6 +30,7 @@ class soil_texture:
         soil_names = ['silty_loam', 'sand', 'silty_clay_loam', 'loam', 'clay_loam',
                       'sandy_loam', 'silty_clay', 'sandy_clay_loam', 'loamy_sand ',
                       'clay', 'silt', 'sandy_clay']
+        self.soil_names = soil_names
         
         # sand, clay
         t0 = np.array([ [0,12], [0,27], [23,27], [50,0], [20,0], [8,12]], float)
@@ -81,7 +82,8 @@ class soil_texture:
                 self.ks= np.exp(shp[tt][9])/100/86400
                 self.l= shp[tt][13]
             else:
-                print("sand+clay is more than 100 percent")
+                if warning:
+                    print("sand+clay is more than 100 percent")
                 self.soil_type = np.nan
                 self.theta_r = np.nan
                 self.theta_s = np.nan
@@ -90,7 +92,8 @@ class soil_texture:
                 self.ks= np.nan
                 self.l= np.nan
         else:
-            print("sand or clay contains nan")
+            if warning:
+                print("sand or clay contains nan")
             self.soil_type = np.nan
             self.theta_r = np.nan
             self.theta_s = np.nan
@@ -98,11 +101,80 @@ class soil_texture:
             self.n = np.nan
             self.ks= np.nan
             self.l= np.nan
-            
+    
+    def get_color(self):
+        """
+        gives the standard soil color
+        sand---> yellow
+        clay---> magenta
+        silt---> cyan
+        
+        based on the article, "TOWARDS A STANDARDISED APPROACH FOR THE 
+        SELECTION OF COLOURS IN SOIL MAPS BASED ON THEIR TEXTURAL COMPOSITION 
+        AND ROCK FRAGMENT ABUNDANCE: AN IMPLEMENTATION WITHIN MACROMEDIA FREEHAND"
+        by Graciela Metternicht and Jasmin Goetting
+        """
+        # yellow magenta cyan
+        ymc = {'silty_loam':(17,14,69), 'sand':(92,3,5),
+               'silty_clay_loam':(10,33,57),  'loam':(43,18,39),
+               'clay_loam':(33,33,34), 'sandy_loam':(65,10,25), 
+               'silty_clay':(7,46,47), 'sandy_clay_loam':(58,28,14), 
+               'loamy_sand':(83,6,11), 'clay':(22,59,19), 
+               'silt':(7,6,87), 'sandy_clay':(51,42,7)}
+        
+        y, m, c = ymc[self.soil_type]
+        self.y = y/100.0
+        self.m = m/100.0
+        self.c = c/100.0
+        
+        self._ymc_to_rgb()
+        return self.r, self.g, self.b
+        
+
+    def _ymc_to_rgb(self):
+        """
+        converts ymc(yellow, magenta, cyan) to rgb (red, green, blue)
+        """
+        g = 0.5*(self.c+self.m+self.y - self.m)
+        r = 0.5*(self.c+self.m+self.y - self.c)
+        b = 0.5*(self.c+self.m+self.y - self.y)
+        
+        self.g = 2*g/(r+g+b)
+        self.r = 2*r/(r+g+b)
+        self.b = 2*b/(r+g+b)
+
+def se_fun(psi,alpha,n):
+    """
+    psi:    pressure head
+    n:      shape index
+    """
+    m = 1-1/n
+    se = (1+(np.abs(psi/alpha))**n)**(-m)
+    return se
+
+def wp_fun(f,qr,alpha,n):
+    
+    wp = qr+(f-qr)*se_fun(-150,alpha,n)
+    return wp
+
+def fc_fun(f,qr,alpha,n):
+    
+    fc = qr+(f-qr)*se_fun(-3.3,alpha,n)
+    return fc
+
+
+
+
             
 if __name__=='__main__':
-    sand = np.nan
+    sand = 20
     clay = 10
     
     foo = soil_texture(sand,clay)
-    print foo.theta_r
+    print("theta_r = %.3f"%foo.theta_r)
+    
+    wp = wp_fun(foo.theta_s, foo.theta_r, foo.alpha, foo.n)
+    print("theta_wp = %.3f"%wp)
+    
+    
+    
