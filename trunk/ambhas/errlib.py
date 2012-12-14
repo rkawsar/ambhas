@@ -25,6 +25,8 @@ functions:
 
 # import required modules
 import numpy as np
+from random import randrange
+import matplotlib.pyplot as plt
 
 def filter_nan(s,o):
     """
@@ -150,6 +152,84 @@ def index_agreement(s,o):
     			(np.abs(s-np.mean(o))+np.abs(o-np.mean(o)))**2))
     return ia
 
+
+class KAPPA:
+    
+    def __init__(self,s,o):
+        s = s.flatten()
+        o = o.flatten()
+        #check if the length of the vectors are same or not
+        if len(s) != len(o):
+            raise Exception("Length of both the vectors must be same")
+        
+        self.s = s.astype(int)
+        self.o = o.astype(int)
+    
+    def kappa_coeff(self):
+        s = self.s
+        o = self.o
+        n = len(s)
+        
+        foo1 = np.unique(s)
+        foo2 = np.unique(o)
+        unique_data = np.unique(np.hstack([foo1,foo2]).flatten())
+        self.unique_data = unique_data
+        kappa_mat = np.zeros((len(unique_data),len(unique_data)))
+        
+        ind1 = np.empty(n, dtype=int)
+        ind2 = np.empty(n, dtype=int)
+        for i in range(len(unique_data)):
+            ind1[s==unique_data[i]] = i
+            ind2[o==unique_data[i]] = i
+        
+        for i in range(n):
+            kappa_mat[ind1[i],ind2[i]] += 1
+          
+        self.kappa_mat = kappa_mat
+
+        # compute kappa coefficient
+        # formula for kappa coefficient taken from
+        # http://adorio-research.org/wordpress/?p=2301
+        tot = np.sum(kappa_mat)
+        Pa = np.sum(np.diag(kappa_mat))/tot
+        PA = np.sum(kappa_mat,axis=0)/tot
+        PB = np.sum(kappa_mat,axis=1)/tot
+        Pe = np.sum(PA*PB)
+        kappa_coeff = (Pa-Pe)/(1-Pe)
+        
+        return kappa_mat, kappa_coeff
+        
+    def kappa_figure(self,fname,data,data_name):
+        data = np.array(data)
+        data = data.astype(int)
+        
+        try:
+            self.kappa_mat
+        except:
+            self.kappa_coeff()
+        
+        kappa_mat = self.kappa_coeff()     
+        unique_data = self.unique_data
+        
+        tick_labels = []
+        for i in range(len(unique_data)):
+            unique_data[i] == data
+            tick_labels.append(data_name[find(data==unique_data[i])])
+        
+        plt.subplots_adjust(left=0.3, top=0.8)
+        plt.imshow(kappa_mat, interpolation='nearest',origin='upper')
+        #plt.gca().tick_top()
+        plt.xticks(range(len(unique_data)),tick_labels, rotation='vertical')
+        plt.yticks(range(len(unique_data)),tick_labels)
+        #yticks(range(0,25),np.linspace(0,3,13))
+        plt.colorbar(shrink = 0.8)
+        #plt.title(vi_name[j])
+        plt.savefig(fname)
+        plt.close()
+        
+
+
+
 if __name__=='__main__':
     #generate two random variable
     obs = np.random.normal(size=100)    
@@ -164,3 +244,12 @@ if __name__=='__main__':
     print(NS(sim,obs)) 
     print(L(sim,obs))
     print(correlation(sim,obs))
+    
+    kappa_class = KAPPA(soil_sat,soil_obs)
+    kappa_mat, kappa_coeff = kappa_class.kappa_coeff()
+    data = range(1,14)
+    data_name = ['silty_loam', 'sand', 'silty_clay_loam', 'loam', 'clay_loam',
+                 'sandy_loam', 'silty_clay', 'sandy_clay_loam', 'loamy_sand ',
+                 'clay', 'silt', 'sandy_clay', 'gravelly_sandy_loam']
+    fname = '/home/tomer/svn/ambhas/examples/kappa.png'
+    #kappa_class.kappa_figure(fname, data, data_name)

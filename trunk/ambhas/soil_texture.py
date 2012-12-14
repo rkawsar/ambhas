@@ -102,7 +102,7 @@ class soil_texture:
             self.ks= np.nan
             self.l= np.nan
     
-    def get_color(self):
+    def get_color(self, scaling=1.0):
         """
         gives the standard soil color
         sand---> yellow
@@ -127,11 +127,11 @@ class soil_texture:
         self.m = m/100.0
         self.c = c/100.0
         
-        self._ymc_to_rgb()
+        self._ymc_to_rgb(scaling)
         return self.r, self.g, self.b
         
 
-    def _ymc_to_rgb(self):
+    def _ymc_to_rgb(self, scaling):
         """
         converts ymc(yellow, magenta, cyan) to rgb (red, green, blue)
         """
@@ -139,9 +139,9 @@ class soil_texture:
         r = 0.5*(self.c+self.m+self.y - self.c)
         b = 0.5*(self.c+self.m+self.y - self.y)
         
-        self.g = 2*g/(r+g+b)
-        self.r = 2*r/(r+g+b)
-        self.b = 2*b/(r+g+b)
+        self.g = scaling*g/(r+g+b)
+        self.r = scaling*r/(r+g+b)
+        self.b = scaling*b/(r+g+b)
 
 def se_fun(psi,alpha,n):
     """
