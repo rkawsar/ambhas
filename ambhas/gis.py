@@ -136,131 +136,122 @@ def berambadi(Ifile,Ofile):
         
  
 def geodetic_area(lon_cen, size_cell):
-	"""
-	Compute the area in square meters given the longitude of the 
-	center and size of the grid 
-	
-	The grid should be square in terms of degree i.e. the size of the 
-	cell should not vary in latitude and longitude
-	
-	input:
-		lon_cen: longitude of the center of grid
-		size_cell: size of the cell in the degree
-	
-	output:
-		area: area of the square grid
-
-	"""
-	r = 6371229.0 # radius of earth in meters
-	area = r**2*np.abs(size_cell)*np.pi/180*np.abs(
-			np.sin((lon_cen-size_cell/2.0)*np.pi/180) - \
+    """
+    Compute the area in square meters given the longitude of the 
+    center and size of the grid 
+    
+    The grid should be square in terms of degree i.e. the size of the 
+    cell should not vary in latitude and longitude
+    
+    input:
+        lon_cen: longitude of the center of grid
+        size_cell: size of the cell in the degree
+        
+    output:
+        area: area of the square grid
+    """
+    r = 6371229.0 # radius of earth in meters
+    area = r**2*np.abs(size_cell)*np.pi/180*np.abs(
+    			np.sin((lon_cen-size_cell/2.0)*np.pi/180) - \
 			np.sin((lon_cen+size_cell/2.0)*np.pi/180))
-			
-	return area
+    return area
 
 
 def latitude_length(longitude):
-	"""
-	computes the length of one degree of a latitude
-	"""
-	a = 6378137.0
-	b = 6356752.3142
-	e = np.sqrt((a**2 - b**2)/a**2)
-	length = np.pi*a*(1-e**2)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**1.5)
-	
-	return length
+    """
+    computes the length of one degree of a latitude
+    """
+    a = 6378137.0
+    b = 6356752.3142
+    e = np.sqrt((a**2 - b**2)/a**2)
+    length = np.pi*a*(1-e**2)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**1.5)
+    return length
 
 def longitude_length(longitude):
-	"""
-	computes the length of one degree of a longitude
-	"""
-	a = 6378137.0
-	b = 6356752.3142
-	e = np.sqrt((a**2 - b**2)/a**2)
-	length = np.pi*a*np.cos(longitude*np.pi/180)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**0.5)
-	
-	return length
-
-
+    """
+    computes the length of one degree of a longitude
+    """
+    a = 6378137.0
+    b = 6356752.3142
+    e = np.sqrt((a**2 - b**2)/a**2)
+    length = np.pi*a*np.cos(longitude*np.pi/180)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**0.5)
+    return length
 
 def read_ascii_grid(fname, dtype='float'):
-	"""
-	A function to read the ascii grid data		
-	
-	Input:
-		fname:	input file name
-	"""
-		
-	# open file for reading
-	f = open(fname, 'r')
-		
-	# read the header information
-	var = ['nrows', 'ncols', 'xllcorner', 'yllcorner', 'cellsize', 
-			'NODATA_value']
-	
-	
-	for i in range(6):
-		foo = f.readline().split()
-		exec("%s = %s"%(foo[0],foo[1]))
-		
-	# check if all the variables are read
-	# if not then issue an error
-	header = {}
-	for v in var:
-		try:
-			exec("header['%s'] = %s"%(v,v)) 
-		except NameError:
-			print "The variable %s could not be find in the file"%v
-	f.close()
-		
-	data = np.genfromtxt(fname, skip_header=6, dtype = dtype)	
-	data[data==NODATA_value] = np.nan		
-	
-	return data, header
+    """
+    A function to read the ascii grid data		
+    
+    Input:
+        fname:	input file name
+    """
+    # open file for reading
+    f = open(fname, 'r')
+    
+    # read the header information
+    var = ['nrows', 'ncols', 'xllcorner', 'yllcorner', 'cellsize', 
+           	'NODATA_value']
+            
+    for i in range(6):
+        foo = f.readline().split()
+        exec("%s = %s"%(foo[0],foo[1]))
+    
+    # check if all the variables are read
+    # if not then issue an error
+    header = {}
+    for v in var:
+        try:
+            exec("header['%s'] = %s"%(v,v)) 
+        except NameError:
+            print "The variable %s could not be find in the file"%v
+    f.close()
+    
+    data = np.genfromtxt(fname, skip_header=6, dtype = dtype)	
+    data[data==NODATA_value] = np.nan		
+    
+    return data, header
 		
 
 def write_ascii_grid(fname, data, header, dtype='float'):
-	"""
-	A function to write the ascii grid data		
-	
-	Input:
-		fname:	input file name
-		data:	input data 
-		header information:	nrows ncols xllcorner yllcorner cellsize NODATA_value
-		dtype: 	data type of the data variable
-	"""
-		
-	# open file for reading
-	f = open(fname, 'w')
-		
-	# write the header information
-	var = ['nrows', 'ncols', 'xllcorner', 'yllcorner', 'cellsize', 
-			'NODATA_value']
-	
-	# check if all the variables are read
-	# if not then issue an error
-	for v in var:
-		try:
-			exec("header['%s']"%v)
-		except NameError:
-			print "The variable %s could not be find in the file"%v
-				
-	for i in range(6):
-		f.write('%s \t %s \n'%(var[i],header[var[i]]))
-	
-	# convert the nan into NODATA_value
-	data[np.isnan(data)] = header['NODATA_value']
-	
-	# write the data
-	for i in range(header['nrows']):
-		for j in range(header['ncols']):
-			f.write('%s '%data[i,j])
-		f.write('\n'%data[i,j])
-	
-	f.close()
-			
-	
-	return 0
+    """
+    A function to write the ascii grid data		
+        Input:
+            fname:	input file name
+            data:	input data 
+            header information:	nrows ncols xllcorner yllcorner cellsize NODATA_value
+            dtype: 	data type of the data variable
+    """
+    # convert the data type
+    data = data.astype(dtype)
+    
+    # open file for reading
+    f = open(fname, 'w')
+    
+    # write the header information
+    var = ['nrows', 'ncols', 'xllcorner', 'yllcorner', 'cellsize', 
+           	'NODATA_value']
+    
+    # check if all the variables are read
+    # if not then issue an error
+    for v in var:
+        try:
+            exec("header['%s']"%v)
+        except NameError:
+            print "The variable %s could not be find in the file"%v
+            
+    for i in range(6):
+        f.write('%s \t %s \n'%(var[i],header[var[i]]))
+        
+    # convert the nan into NODATA_value
+    data[np.isnan(data)] = header['NODATA_value']
+    
+    # write the data
+    for i in range(header['nrows']):
+        for j in range(header['ncols']):
+            f.write('%s '%data[i,j])
+        f.write('\n'%data[i,j])
+    f.close()
+    
+    return 0
 
 if __name__ == '__main__':
     # from utm to degree
@@ -290,32 +281,32 @@ if __name__ == '__main__':
     #generate the area of the square grid globally with 1 degree resolution
     #lon_cen = np.linspace(-90,90)
     #size = 1
-	
-	#area = geodetic_area(lon_cen, size)
-	#area1 = geodetic_area(lon_cen, size/1.0)
-
-	#plt.plot(lon_cen, area1/1e6)
-	#plt.xlabel('Longitude (degree)')
-	#plt.ylabel('Area of a degree square (Sq. km)')
-	#plt.show()
-	
-	# length of latitude and longitude
-	#longitude = np.linspace(0,90)
-	#len_lat = latitude_length(longitude)
-	#len_lon = longitude_length(longitude)
-	
-	#ax1 = plt.subplot(111)
-	#plt.plot(latitude, len_lat/1000, 'b-', label='Latitude')
-	#ax1.set_xlabel('Longitude (degree)')
-	#ax1.set_ylabel('Length of a degree Latitude (km)', color='b')
-	#for tl in ax1.get_yticklabels():
-	#	tl.set_color('b')
-		                
-	#ax2 = plt.twinx()
-	#ax2.plot(latitude, len_lon/1000, 'r--')
-	#for tl in ax2.get_yticklabels():
-	#	tl.set_color('r')
-	#ax2.set_ylabel('Length of a degree Longitude (km)', color='r')
-	#plt.show()
+    
+    #area = geodetic_area(lon_cen, size)
+    #area1 = geodetic_area(lon_cen, size/1.0)
+    
+    #plt.plot(lon_cen, area1/1e6)
+    #plt.xlabel('Longitude (degree)')
+    #plt.ylabel('Area of a degree square (Sq. km)')
+    #plt.show()
+    
+    # length of latitude and longitude
+    #longitude = np.linspace(0,90)
+    #len_lat = latitude_length(longitude)
+    #len_lon = longitude_length(longitude)
+    
+    #ax1 = plt.subplot(111)
+    #plt.plot(latitude, len_lat/1000, 'b-', label='Latitude')
+    #ax1.set_xlabel('Longitude (degree)')
+    #ax1.set_ylabel('Length of a degree Latitude (km)', color='b')
+    #for tl in ax1.get_yticklabels():
+        #	tl.set_color('b')
+    
+    #ax2 = plt.twinx()
+    #ax2.plot(latitude, len_lon/1000, 'r--')
+    #for tl in ax2.get_yticklabels():
+        #	tl.set_color('r')
+    #ax2.set_ylabel('Length of a degree Longitude (km)', color='r')
+    #plt.show()
 	
 	
