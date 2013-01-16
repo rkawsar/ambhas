@@ -288,6 +288,70 @@ The resulted graph is:
 
 http://ambhas.googlecode.com/svn/wiki/images/run_richards.png
 
+The input xls file contain the following sheets:
+=== ind ===
+This sheet controls the the row that should be read from various inputs.
+For example, soil_hyd_par = 2 means that from the soil_hyd_par the second row (ignoring the header row) would be read by the program. Using this one can write all the parameters ones, and by just making changes in the ind run for different parameters.
+
+soil_hyd_par => indices for soil_hyd_par
+units => indices for the units
+temporal_info => indices for temporal_info
+spatial_info  => indices for spatial_info
+initial_condition => indices for initial_condition
+output_par => indices for output_par
+
+
+=== soil_hyd_par ===
+ind => indices to easily see the which one of row is read. Changing these values does not change anything.
+
+theta_r => residual soil moisture (volume/volume)
+
+theta_s => saturated soil moisture (volume/volume)
+
+alpha => inverse of capilary fringe thickness (1/m)
+
+n => n parameter of VG model (-)
+
+ks => saturated hydraulic conductivity (m/s)
+
+l => l parameter of VG model (-)
+
+evap_0 => The soil moisture below which the soil evaporation would be zero. Usually it value if taken to be equal to the wilting point.
+
+evap_1 => The soil moisture above which the soil evaporation would be equal to the PET. Usually it value if taken to be equal to field capacity.
+
+=== forcing ===
+year => year of forcing
+doy = > DOY (Day Of Year) of the forcing
+rain => precipitation in length unit
+pet => potential evaporation in length unit
+The unit of rain and pet could be either mm or m, and the unit must be specified in the 'unit' sheet accordingly.
+
+=== initial_condition ===
+ind => Indices to be used by 'ind' sheet. This is just for easy reference, changing this does not affect anything.
+
+theta => Initial soil moisture (volume/volume). For time being, model only takes the initial uniform soil moisture. 
+
+=== units ===
+Note that the units apply for the forcing. Units for everything else should be m for Length and s for Time.
+
+=== temporal_info ===
+ind => Indices to be used by 'ind' sheet. This is just for easy reference, changing this does not affect anything.
+
+dt_flux => Duration of the forcing in seconds i.e. for a daily forcing its value would be 86400 and for hourly its value would be 3600.
+
+final_time => Total time in seconds. The time is counted from the beginning. Hence the model would always start from the first forcing and would go upto the time defined in this.
+
+=== spatial_info ===
+ind => Indices to be used by 'ind' sheet. This is just for easy reference, changing this does not affect anything.
+
+no_layer => Number of soil layers.
+dz => thickness of one soil node.
+These two in combination would control the total length of the soil profile. 
+
+=== output_par ===
+ind => Indices to be used by 'ind' sheet. This is just for easy reference, changing this does not affect anything.
+output_filename => Name of the output file.
 
 = soil_texture =
 Provides the soil type and soil hydraulic properties based on pedotransfer function given the percentage of sand, silt and clay.
