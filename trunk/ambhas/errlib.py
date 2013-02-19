@@ -135,7 +135,12 @@ def correlation(s,o):
         correlation: correlation coefficient
     """
     s,o = filter_nan(s,o)
-    return np.corrcoef(o, s)[0,1]
+    if s.size == 0:
+        corr = np.NaN
+    else:
+        corr = np.corrcoef(o, s)[0,1]
+        
+    return corr
 
 
 def index_agreement(s,o):
