@@ -39,7 +39,7 @@ def bias_correction(oc, mc, mp, nonzero = True):
     if nonzero:
         OC[OC<0] = 0
         
-    f = interp1d(F_oc, OC)
+    f = interp1d(F_oc, OC, bounds_error=False)
     
     F1 = st.cpdf(mc, mp)
     mp_adjusted = f(F1)

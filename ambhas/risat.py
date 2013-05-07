@@ -19,9 +19,38 @@ from ambhas.gis import utm2deg, deg2utm,Pixel2Geo
 import numpy as np
 from xml.dom import minidom
 from xml.dom.minidom import parseString
+from scipy.signal import medfilt2d, wiener
+
+def speckle_filter(ifile, ofile):
+    """
+    ifile
+    ofile
+    """
+    # read the Digital Number (DNp)
+    dataset = gdal.Open(ifile,GA_ReadOnly)
+    sigma = dataset.GetRasterBand(1).ReadAsArray()
+    inci = dataset.GetRasterBand(2).ReadAsArray()
+    RasterXSize = dataset.RasterXSize
+    RasterYSize = dataset.RasterYSize
+    GT = dataset.GetGeoTransform()
+    projection = dataset.GetProjection()
+    dataset = None
+    
+    # filter
+    sigma = medfilt2d(sigma, kernel_size=7)
+    #sigma = wiener(sigma, mysize=(7,7),noise=None)
+    
+    # same as geotiff
+    driver = gdal.GetDriverByName('GTiff')
+    output_dataset = driver.Create(ofile, RasterXSize, RasterYSize,2,gdal.GDT_Float32)
+    output_dataset.SetGeoTransform(GT)
+    output_dataset.SetProjection(projection)
+    output_dataset.GetRasterBand(1).WriteArray(sigma, 0, 0)
+    output_dataset.GetRasterBand(2).WriteArray(inci, 0, 0)
+    output_dataset = None
 
 
-def raw_bc(risat_dir, risat_file, grid_file, out_dir):
+def raw_bc(risat_dir, risat_file, grid_file, out_file):
     """
     Input:
         risat_dir
@@ -71,8 +100,7 @@ def raw_bc(risat_dir, risat_file, grid_file, out_dir):
     f.close()
     
     # make the name of output file using hte DateOfPass
-    out_file = out_dir + DateOfPass + '.tif'
-    
+        
     f = open(grid_file, 'r')
 
     # Read and ignore header lines
