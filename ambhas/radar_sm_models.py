@@ -105,7 +105,6 @@ def dubois_inverse(hh, vv, theta, l, dB=True):
     
     return hh_lut, vv_lut
 
-hh_lut, vv_lut = dubois_inverse(-5,-5,20, 5)
-plt.matshow(hh_lut-vv_lut); plt.colorbar()
+
 
 
