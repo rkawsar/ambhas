@@ -16,6 +16,8 @@ def ep2mv(ep):
     """
     this function converts the real part of dielectric constant
     into the volumetric soil moisture
+    
+    The regression equation is based on the Topp et al. (1980,1985)
     Input:
         ep: real part of the dielectric constant
     Output:
