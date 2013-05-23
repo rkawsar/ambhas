@@ -10,6 +10,8 @@ Functions:
     deg2utm : Calculate Lat, Lon from UTM
     kabini: 
     berambadi: 
+    great_circle_distance:
+        
 """
 
 # load needed python modules 
@@ -177,6 +179,27 @@ def longitude_length(longitude):
     length = np.pi*a*np.cos(longitude*np.pi/180)/(180*(1-e**2*np.sin(longitude*np.pi/180.0)**2)**0.5)
     return length
 
+def great_circle_distance(lat_s,lon_s,lat_f,lon_f):
+    """
+    computes the great circle distance between two points
+    Input:
+        lat_s : latitute (degree) of the standpoint
+        lon_s : longitude (degree) of the standpoint
+        lat_f : latitute (degree) of the forepoint
+        lon_f : longitude (degree) of the forepoint
+    Output:
+        dis: great circle distance (km)
+    """
+    r = 6372.8
+    phi_f = lat_f*np.pi/180.0
+    phi_s = lat_s*np.pi/180.0
+    dl =  np.abs(lon_f-lon_s)*np.pi/180.0
+    foo1 = np.sqrt((np.cos(phi_f)*np.sin(dl))**2 + (np.cos(phi_s)*np.sin(phi_f) - np.sin(phi_s)*np.cos(phi_f)*np.cos(dl))**2 )
+    foo2 = np.sin(phi_s)*np.sin(phi_f) + np.cos(phi_s)*np.cos(phi_f)*np.cos(dl)
+    
+    dis = r*np.arctan2(foo1,foo2)
+    return dis    
+
 def read_ascii_grid(fname, dtype='float'):
     """
     A function to read the ascii grid data		
@@ -308,5 +331,10 @@ if __name__ == '__main__':
         #	tl.set_color('r')
     #ax2.set_ylabel('Length of a degree Longitude (km)', color='r')
     #plt.show()
+    
+    ## great circle distance example
+    lat_s, lon_s = 36.12, -86.67
+    lat_f, lon_f = 33.94, -118.40
+    dis = great_circle_distance(lat_s,lon_s,lat_f,lon_f)
 	
 	
