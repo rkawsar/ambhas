@@ -7,7 +7,7 @@ except ImportError:
 
 import sys, os
 
-version = '0.1.1'
+version = '0.4.0'
 
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
@@ -24,7 +24,7 @@ setup(
     packages = find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
     zip_safe = False,
-    install_requires=["numpy"],
+    install_requires=["numpy", "scipy"],
     classifiers = [
         "Programming Language :: Python :: 2.7",
         "Development Status :: 4 - Beta",
