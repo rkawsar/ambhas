@@ -15,3 +15,6 @@ Changes
 
 0.3.1
 * manifest.in file edited
+
+0.3.2
+extract_gis_data, richards, risat added
