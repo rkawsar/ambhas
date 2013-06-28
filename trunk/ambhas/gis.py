@@ -56,6 +56,21 @@ def deg2utm(Lon,Lat,utmzone=43):
     x,y = p(Lon, Lat)
     return x,y
     
+def cut_xy(Ifile, Ofile, xmin, xmax, ymin, ymax):
+    """
+    Cut the raster using the given xmin, xmax, ymin, ymax 
+    by using the gdal_translate
+    
+    If the Ofile already exists, it is deleted
+    """
+    if os.path.exists(Ofile):
+        os.remove(Ofile)
+        
+    Ber = '%s %s %s %s'%(xmin, ymax, xmax, ymin)
+    SC = 'gdal_translate -a_ullr %s -projwin %s %s %s'%(Ber, Ber, Ifile, Ofile)
+    returncode = call(SC, shell=True)
+    return returncode
+    
 def kabini(Ifile,Ofile):
     # define the file names file
     Temp1 = '/home/tomer/MODISdata/temp/temp1.tif'
@@ -206,6 +221,7 @@ def read_ascii_grid(fname, dtype='float'):
     
     Input:
         fname:	input file name
+        dtype: int or float
     """
     # open file for reading
     f = open(fname, 'r')
@@ -229,7 +245,12 @@ def read_ascii_grid(fname, dtype='float'):
     f.close()
     
     data = np.genfromtxt(fname, skip_header=6, dtype = dtype)	
-    data[data==NODATA_value] = np.nan		
+    if dtype == 'float':
+        data[data==NODATA_value] = np.nan		
+    elif dtype == 'int':
+        pass
+    else:
+        raise Exception('invalid value in dtype')
     
     return data, header
 		
@@ -243,9 +264,7 @@ def write_ascii_grid(fname, data, header, dtype='float'):
             header information:	nrows ncols xllcorner yllcorner cellsize NODATA_value
             dtype: 	data type of the data variable
     """
-    # convert the data type
-    data = data.astype(dtype)
-    
+        
     # open file for reading
     f = open(fname, 'w')
     
@@ -267,6 +286,9 @@ def write_ascii_grid(fname, data, header, dtype='float'):
     # convert the nan into NODATA_value
     data[np.isnan(data)] = header['NODATA_value']
     
+    # convert the data type
+    data = data.astype(dtype)
+    
     # write the data
     for i in range(header['nrows']):
         for j in range(header['ncols']):
@@ -278,29 +300,29 @@ def write_ascii_grid(fname, data, header, dtype='float'):
 
 if __name__ == '__main__':
     # from utm to degree
-    x = 60000
-    y = 1200000
-    lat,lon = utm2deg(x,y,utmzone=43)
-    print(lat,lon)
-    # from degree to utm
-    x,y = deg2utm(lat,lon,utmzone=43)
-    
-    print(x,y)
+    #x = 60000
+    #y = 1200000
+    #lat,lon = utm2deg(x,y,utmzone=43)
+    #print(lat,lon)
+    ## from degree to utm
+    #x,y = deg2utm(lat,lon,utmzone=43)
+    #
+    #print(x,y)
  
 
     # test the sample 
-    fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid.grd'
-    data, header = read_ascii_grid(fname)
-    print data    
-    print header
+    #fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid.grd'
+    #data, header = read_ascii_grid(fname)
+    #print data    
+    #print header
     
     #plt.matshow(data)
     #plt.show()
     
     # write the sample
-    fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid_out.grd'
-    write_ascii_grid(fname, data, header)
-    
+    #fname = '/home/tomer/svn/ambhas/examples/sample_ascii_grid_out.grd'
+    #write_ascii_grid(fname, data, header)
+    #
     #generate the area of the square grid globally with 1 degree resolution
     #lon_cen = np.linspace(-90,90)
     #size = 1
@@ -333,8 +355,14 @@ if __name__ == '__main__':
     #plt.show()
     
     ## great circle distance example
-    lat_s, lon_s = 36.12, -86.67
-    lat_f, lon_f = 33.94, -118.40
-    dis = great_circle_distance(lat_s,lon_s,lat_f,lon_f)
+    #lat_s, lon_s = 36.12, -86.67
+    #lat_f, lon_f = 33.94, -118.40
+    #dis = great_circle_distance(lat_s,lon_s,lat_f,lon_f)
+    Ifile = '/home/tomer/mdb/input/DEM/15-R.tif'
+    Ofile = '/home/tomer/temp/foo.txt'
+    xmin, xmax, ymin, ymax = 138.0, 153.0, -38, -24.0
+    #xmin, xmax, ymin, ymax = 138.5, 152.5, -37.5, -24.5
+    cut_xy(Ifile, Ofile, xmin, xmax, ymin, ymax)
+    
 	
 	

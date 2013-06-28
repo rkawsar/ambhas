@@ -9,6 +9,7 @@ Created on Fri Nov 11 16:49:46 2011
 
 import xlrd, xlwt
 import numpy as np
+import os
 
 class xlsread():
     """
@@ -27,11 +28,14 @@ class xlsread():
         self.sheet_names = book.sheet_names()
         self.book = book
                 
-    def get_cells(self, cell_range, sheet):
+    def get_cells(self, cell_range, sheet, dtype='nparray'):
         """
         cell_range: a single cell i.e. 'a2'
                     range of cells i.e. 'a2:f5'
         sheet:  name of the sheet, must be string
+        dtype: datatype
+               nparray --> numpy array (default)
+               list --> a list 
         """
         book = self.book
         sheet = book.sheet_by_name(sheet)
@@ -65,8 +69,15 @@ class xlsread():
                             data_row.append(np.nan)
                     
                 data.append(data_row)
+        
+        if dtype == 'nparray':
+            data = np.array(data)
+        elif dtype == 'list':
+            pass
+        else:
+            raise Exception('value error in dtype')
             
-        return np.array(data)
+        return data
 
     def __cell2ind__(self,foo):
         """
@@ -97,7 +108,7 @@ class xlswrite():
     var = np.array([[5,10,12],[2,5,6]])
     xls_out_file = xlswrite(var, 'f10', 'Sheet1')
     fname = '/home/tomer/data.xls'
-    foo1.save(fname)
+    xls_out_file.save(fname)
     """
     
     def __init__(self, data, cell_start, sheet):
@@ -158,7 +169,7 @@ class xlswrite2(xlswrite):
     Example:
     var = np.array([[5,10,12],[2,5,6]])
     fname = '/home/tomer/data.xls'    
-    xls_out_file = xlswrite(fname)
+    xls_out_file = xlswrite2(fname)
     xls_out_file.write(var, 'f10', 'Sheet1')
     xls_out_file.save()
     """
@@ -168,24 +179,44 @@ class xlswrite2(xlswrite):
                 
         # initialize the xlwt     
         self.book = xlwt.Workbook()
+        self.sheet_names = []
     
-    def write(self, data, cell_start, sheet):
-        sheet = book.add_sheet(sheet)
-
+    def write(self, data, cell_start, sheet, dates=False):
+        book = self.book
+        
+        if dates:
+            xf = xlwt.easyxf(num_format_str='DD/MM/YYYY')
+        
+        if sheet not in self.sheet_names:
+            worksheet = book.add_sheet(sheet)
+            self.sheet_names.append(sheet)
+        else:
+            worksheet = book.get_sheet(self.sheet_names.index(sheet))
+        
+        
         # convert into row and col        
         row, col = self.__cell2ind__(cell_start)
 
         if isinstance(data, str)  or isinstance(data, float) or isinstance(data,int):
-            sheet.write(row,col,data)
+            if dates:
+                worksheet.write(row,col,data, xf)
+            else:
+                worksheet.write(row,col,data)
                 
         if data.ndim == 1:
             for i in range(data.shape[0]):
-                sheet.write(row+i,col, data[i])
+                if dates:
+                    worksheet.write(row+i,col, data[i], xf)
+                else:
+                    worksheet.write(row+i,col, data[i])
                 
         else:
             for i in range(data.shape[0]):
                 for j in range(data.shape[1]):
-                    sheet.write(row+i, col+j, data[i,j])
+                    if dates:
+                        worksheet.write(row+i, col+j, data[i,j], xf)
+                    else:
+                        worksheet.write(row+i, col+j, data[i,j])
 
     
     def save(self):
@@ -194,23 +225,29 @@ class xlswrite2(xlswrite):
 
 if __name__ == "__main__":
     
-    # read the data
-    fname = '/home/tomer/rain_projection/raw_data/a2_0.5.xls'
-        
-    foo = xlsread(fname)
-    var = foo.get_cells('a3:a5', 'Sheet1')
-    
-    book = xlrd.open_workbook(fname)
-    sheet = book.sheet_by_name('Sheet1')
-    sheet.cell_value(0,0)    
-    
-    print var
-    
     # write the data
     var = np.array([[5,10,12],[2,5,6]])
     foo1 = xlswrite(var, 'f10', 'Sheet1')
-    fname = '/home/tomer/data.xls'
+    fname = os.path.abspath('../tests/data.xls')
     foo1.save(fname)
+    
+    # read the data
+    fname = os.path.abspath('../tests/data.xls')
+        
+    foo = xlsread(fname)
+    var = foo.get_cells('f10:h11', 'Sheet1')
+    
+    #print var
+    # test the xlswrite2
+    var = np.array([[5,10,12],[2,5,6]])
+    fname = os.path.abspath('../tests/data1.xls')    
+    xls_out_file = xlswrite2(fname)
+    xls_out_file.write(var, 'a1', 'Sheet1')
+    xls_out_file.write(var, 'a1', 'Sheet2')
+    xls_out_file.write(var, 'e1', 'Sheet1')
+    xls_out_file.save()
+    
+    
     
     
 

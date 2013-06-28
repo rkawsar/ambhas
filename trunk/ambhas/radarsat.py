@@ -12,7 +12,7 @@ import math
 from osgeo import gdal
 from xml.dom import minidom
 import scipy.signal
-
+import os
 
 class calibrate:
     """
@@ -29,7 +29,7 @@ class calibrate:
         
         self.inpath = inpath
         # read the data, GCPs and projection
-        dataset = gdal.Open("RADARSAT_2_CALIB:SIGMA0:" + inpath + "product.xml")
+        dataset = gdal.Open("RADARSAT_2_CALIB:SIGMA0:" + os.path.join(inpath, "product.xml"))
         self.geotransform = dataset.GetGeoTransform()
         self.gcps = dataset.GetGCPs()
         self.gcpproj = dataset.GetGCPProjection()
@@ -87,12 +87,12 @@ class calibrate:
     
     def incidence_angle(self,outfile_ia):
         # make the incidence angle image
-        xmldoc = minidom.parse(self.inpath+"lutSigma.xml")
+        xmldoc = minidom.parse(os.path.join(self.inpath,"lutSigma.xml"))
         SigmaGains = xmldoc.getElementsByTagName('gains')
         SigmaGains = SigmaGains[0].toxml()
         SigmaGains = SigmaGains[7:-8]
         SigmaGains = SigmaGains.split(' ')
-        xmldoc = minidom.parse(self.inpath+"lutBeta.xml")
+        xmldoc = minidom.parse(os.path.join(self.inpath,"lutBeta.xml"))
         BetaGains = xmldoc.getElementsByTagName('gains')
         BetaGains = BetaGains[0].toxml()
         BetaGains = BetaGains[7:-8]
