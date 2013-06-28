@@ -211,6 +211,31 @@ class SpatOutlier():
         rain_filled[self.outliers] = np.nan
         return rain_filled
 
+def find_common_dates(date1, date2):
+    """
+    Find the indices for the common dates
+    Input:
+        date1: first time series of date
+        date2: second time series of date
+    Output:
+        ind1:   indices of the common dates for date1
+        ind2:   indices of the common dates for date2
+    """
+    date1 = np.copy(date1)
+    date2 = np.copy(date2)
+    date1.shape = -1,1
+    date2.shape = 1,-1
+    foo1 = np.tile(date1, (date2.shape))
+    foo2 = np.tile(date2, (date1.shape))
+    dis = np.abs(foo1-foo2) <=1
+    foo = np.argmax(dis, axis=0)
+    ind1 = np.zeros(len(date1))
+    ind1 = ind1.astype(bool)
+    ind1[foo[foo>0]] = True
+    
+    ind2 = foo>0
+    return ind1, ind2
+
 if __name__ == "__main__":
     oc = np.random.randn(100)
     mc = 2+np.random.randn(100)
