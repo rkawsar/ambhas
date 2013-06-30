@@ -164,6 +164,52 @@ def fc_fun(f,qr,alpha,n):
 
 
 
+class saxton_rawls:
+    """
+    Soil Water Characteristic Estimates by Texture and Organic Matter for Hydrologic Solutions
+    Input:
+        sand: percentage sand
+        clay: percentage clay
+    output:
+        
+    """
+    def __init__(self, sand, clay, organic_matter):
+        self.S = sand
+        self.C = clay 
+        self.OM = organic_matter
+    
+    def sm_33(self):
+        S = self.S
+        C = self.C
+        OM = self.OM
+        theta_33t = -0.251*S + 0.195*C + 0.011*OM + 0.006*(S*OM) - 0.027*(C*OM) + 0.452*(S*C) +.299
+        theta_33 = theta_33t + 1.283*theta_33t*2 - 0.374*theta_33t - 0.015
+        print theta_33
+        return theta_33
+    
+    def sm_s_33(self):
+        S = self.S
+        C = self.C
+        OM = self.OM
+        theta_s_33t = 0.278*S + 0.034*C + 0.022*OM -0.018*(S*OM) - 0.027*(C*OM) -0.584*(S*C) +0.078
+        theta_s_33 = theta_s_33t + 0.636*theta_s_33t - 0.107
+        return theta_s_33
+    
+    def sm_s(self):
+        S = self.S
+        C = self.C
+        theta_33 = self.sm_33()
+        theta_s_33 = self.sm_s_33()
+        theta_s = theta_33 + theta_s_33 - 0.097*S + 0.043
+        return theta_s
+        
+    def sm_s_df(self, density):
+        theta_s = self.sm_s()
+        theta_s_df = theta_s*(1-density/2.65)        
+        return theta_s_df
+        
+        
+        
 
             
 if __name__=='__main__':
@@ -175,6 +221,10 @@ if __name__=='__main__':
     
     wp = wp_fun(foo.theta_s, foo.theta_r, foo.alpha, foo.n)
     print("theta_wp = %.3f"%wp)
-    
+    sand = 49
+    clay = 23
+    organic_matter = 2
+    foo = saxton_rawls(sand, clay, organic_matter)
+    print foo.sm_s_df(1.49)
     
     
