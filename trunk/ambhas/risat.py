@@ -14,10 +14,8 @@ some modification woould be need for other utm zones
 
 from osgeo import gdal
 from osgeo.gdalconst import *
-import matplotlib.pyplot as plt
 from ambhas.gis import utm2deg, deg2utm,Pixel2Geo
 import numpy as np
-from xml.dom import minidom
 from xml.dom.minidom import parseString
 from scipy.signal import medfilt2d, wiener
 
