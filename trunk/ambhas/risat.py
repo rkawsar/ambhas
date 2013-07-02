@@ -160,7 +160,7 @@ def raw_bc(risat_dir, risat_file, grid_file, out_file):
     sigma[sigma>10] = 10
     sigma[sigma<-25] = -25
 
-    # same as geotiff
+    # save as geotiff
     driver = gdal.GetDriverByName('GTiff')
     output_dataset = driver.Create(out_file, RasterXSize, RasterYSize,2,gdal.GDT_Float32)
     output_dataset.SetGeoTransform(GT)
