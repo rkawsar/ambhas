@@ -118,7 +118,7 @@ if __name__ == "__main__":
     Ca = np.linspace(-3,3,51)
     hh = hh - Ca
     vv = vv - Ca
-    
+    l = 2
     estimated_ep = np.empty(51,)
     for i in range(51):
         estimated_ep[i] = estimate_ep_h(hh[i], vv[i], theta, l)[0]

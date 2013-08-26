@@ -11,9 +11,10 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import fmin
-from ambhas.dielectric import ep2mv
+from ambhas.dielectric import ep2mv, mv2ep
+from iem import horizontal_fresnel, vertical_fresnel
 
-def foreward_model(ks, gamma0, theta):
+def foreward_model(ks, gamma0, theta, dB=True):
     """
     Eq. 4 of Oh (1992)
     Input:
@@ -22,15 +23,17 @@ def foreward_model(ks, gamma0, theta):
         theta: incidence angle (degree)    
     Output:
         q: hh-vv (dB)
-                
+        p: 
     """
     
     theta = theta*np.pi/180 # convert theta from degree to radian
     
     q = 0.23*np.sqrt(gamma0)*(1-np.exp(-ks))
     p = (1 - (2*theta/np.pi)**(1/(3*gamma0))*np.exp(-ks))**2
-    
-    return 10*np.log10(q), 10*np.log10(p)
+    if dB:
+        q = 10*np.log10(q)
+        p = 10*np.log10(p)
+    return q, p
 
 def res_eq11(gamma0, p, q, theta):
     """
@@ -78,6 +81,26 @@ def gamma2ep(gamma):
     ep = (2/(1-np.sqrt(gamma))-1)**2
     return ep
 
+def mv2hh(mv, ks, theta, dB=True):
+    """
+    Input:
+        mv: soil moisture (v/v)
+        ks: microwave roughness
+        theta: incidence angle (degree)
+    Output:
+        hh: backscatter coefficient 
+    """
+    ep = mv2ep(mv)
+    gamma0 = ep2gamma(ep)
+    g = 0.7*(1-np.exp(-0.65*ks**1.8))
+    q, p = foreward_model(ks, gamma0, theta, dB=False)
+    gamma_h = horizontal_fresnel(ep, theta)
+    gamma_v = vertical_fresnel(ep, theta)
+    hh = g*np.sqrt(p)*np.cos(np.radians(theta))**3*(gamma_v-gamma_h)
+    if dB:
+        hh = 10*np.log10(hh)
+    return hh
+
 def inverse_oh1992(p,q,theta):
     """
     Eq. 11 of Oh(1992)
@@ -102,7 +125,7 @@ def inverse_oh1992(p,q,theta):
     return mv, ks
     
 if __name__ == "__main__":
-    from ambhas.dielectric import mv2ep
+    
     # fig 11 and 12 of Oh(1992)
     theta = 40
     mv = 0.25

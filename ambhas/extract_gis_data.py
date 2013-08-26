@@ -14,8 +14,9 @@ import numpy as np
 from ambhas.gis import utm2image
 import matplotlib.nxutils as nx
 from ambhas.xls import xlsread
+from scipy.stats import nanstd, nanmean
 
-def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66):
+def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median', alpha=0.1):
     """
     it reads the gis file defined in the ds
     then extract the data at coordinates defined in each sheet of the xls_in file
@@ -23,12 +24,18 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66):
     the header of the data in the xls_out are written as defined in the 
     ds_short_name
     
-    xls_in: the name of the input xls file containing the co-ordinates of the plot
-    xls_out: the xls file in which the output will be written
-    ds: the data source file name in the gis format, these files must be in the 
-        tiff format
-    ds_short_name:  the name that will appear as header in the output xls file
-    band: band of the raster data to extract
+    Input:
+        xls_in: the name of the input xls file containing the co-ordinates of the plot
+        xls_out: the xls file in which the output will be written
+        ds: the data source file name in the gis format, these files must be in the 
+            tiff format
+        ds_short_name:  the name that will appear as header in the output xls file
+        band: band of the raster data to extract
+        n: number of data fields in the input xls file
+        method:
+            median: median of the data
+            mean: simple arithmatic average
+            truncated: truncated mean
     """
     
     if type(ds) is not list:
@@ -54,8 +61,23 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66):
             x,y = utm2image(GT,xy)
                 
             extracted_data = data[y,x]
-            final_data[i,0,k] = np.median(extracted_data)
-            final_data[i,1,k] = np.std(extracted_data)
+            
+            if method == 'median':
+                final_data[i,0,k] = np.median(extracted_data)
+                final_data[i,1,k] = nanstd(extracted_data)
+            elif method == 'mean':
+                final_data[i,0,k] = nanmean(extracted_data)
+                final_data[i,1,k] = nanstd(extracted_data)
+            elif method == 'truncated':
+                extracted_data = extracted_data[~np.isnan(extracted_data)]
+                isort = np.argsort(extracted_data)
+                n_extracted_data = len(extracted_data)
+                extracted_data = extracted_data[isort[n_extracted_data*alpha:n_extracted_data*(1-alpha)]]
+                final_data[i,0,k] = nanmean(extracted_data)
+                final_data[i,1,k] = nanstd(extracted_data)
+            
+            else:
+                raise TypeError("method should be either 'median', 'mean', or 'truncated' ")
             
         print('%i/%i'%(k+1,len(ds)))
     

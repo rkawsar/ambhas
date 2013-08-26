@@ -199,6 +199,24 @@ def inverse_oh2004(p, vh, theta, q, k):
     
     return mv, s
 
+def mv2hh(mv, ks, theta, dB=True):
+    """
+    Eq. from Gherboudj (2011)
+    Input:
+        mv: soil moisture (v/v)
+        ks: EM roughness
+        theta: incidence angle (degree)
+    """
+    theta = np.radians(theta)
+    bc_hvs = 0.11*mv**0.7*np.cos(theta)**2.2*(1-np.exp(-0.32*ks**1.8))
+    q = 0.095*(0.13+np.sin(1.5*theta))**1.4*(1-np.exp(-1.3*ks**0.9))
+    p = 1 - ((np.rad2deg(theta)/90)**(0.35*mv**(-0.65)))*(np.exp(-0.4*ks**1.4))
+    bc_vvs = bc_hvs/q
+    hh = p*bc_vvs
+    if dB:
+        hh = 10*np.log10(hh)
+    return hh
+
 
 if __name__ == "__main__":
     pass
