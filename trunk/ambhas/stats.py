@@ -236,6 +236,12 @@ def find_common_dates(date1, date2):
     ind2 = foo>0
     return ind1, ind2
 
+def runningMean(x, N):
+    y = np.zeros((len(x),))
+    for ctr in range(len(x)):
+         y[ctr] = nanmean(x[ctr-N:ctr])
+    return y
+
 if __name__ == "__main__":
     oc = np.random.randn(100)
     mc = 2+np.random.randn(100)

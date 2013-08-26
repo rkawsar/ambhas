@@ -36,10 +36,13 @@ def filter_nan(s,o):
     this is used by all other functions, otherwise they will produce nan as 
     output
     """
-    data = np.array([s.flatten(),o.flatten()])
-    data = np.transpose(data)
-    data = data[~np.isnan(data).any(1)]
-    return data[:,0],data[:,1]
+    if np.sum(~np.isnan(s*o))>=1:
+        data = np.array([s.flatten(),o.flatten()])
+        data = np.transpose(data)
+        data = data[~np.isnan(data).any(1)]
+        s = data[:,0]
+        o = data[:,1]
+    return s, o
 
 def pc_bias(s,o):
     """
@@ -158,6 +161,42 @@ def index_agreement(s,o):
     return ia
 
 
+def KGE(s,o):
+    """
+    Kling-Gupta Efficiency
+    input:
+        s: simulated
+        o: observed
+    output:
+        kge: Kling-Gupta Efficiency
+        cc: correlation 
+        alpha: ratio of the standard deviation
+        beta: ratio of the mean
+    """
+    s,o = filter_nan(s,o)
+    cc = correlation(s,o)
+    alpha = np.std(s)/np.std(o)
+    beta = np.sum(s)/np.sum(o)
+    kge = 1- np.sqrt( (cc-1)**2 + (alpha-1)**2 + (beta-1)**2 )
+    return kge, cc, alpha, beta
+
+def assimilation_eff(assimilated, simulated, observed):
+    """
+    Assimilation efficiency (Aubert et al., 2003)
+    Input:
+        assimilated: assimilated flow
+        simulated: simulated flow
+        observed: observed flow
+    Output:
+        Eff
+    """
+    s,o = filter_nan(simulated, observed)
+    a,o = filter_nan(assimilated, observed)
+    
+    Eff = 100*(1 - np.sum((a-o)**2)/np.sum((s-o)**2))
+    return Eff
+    
+    
 class KAPPA:
     
     def __init__(self,s,o):
