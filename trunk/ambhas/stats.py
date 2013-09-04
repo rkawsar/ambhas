@@ -272,7 +272,7 @@ import numpy as np
 import statistics as st
 from scipy.interpolate import interp1d
 from scipy.stats import norm, chi2
-from scipy.stats import scoreatpercentile
+from scipy.stats import scoreatpercentile, nanmean
 
 def bias_correction(oc, mc, mp, nonzero = True):
     """
@@ -351,7 +351,7 @@ def mk_test(x, alpha = 0.05):
         tp = np.zeros(unique_x.shape)
         for i in xrange(len(unique_x)):
             tp[i] = sum(unique_x[i] == x)
-        var_s = (n*(n-1)*(2*n+5) + np.sum(tp*(tp-1)*(2*tp+5)))/18
+        var_s = (n*(n-1)*(2*n+5) - np.sum(tp*(tp-1)*(2*tp+5)))/18
     
     if s>0:
         z = (s - 1)/np.sqrt(var_s)
