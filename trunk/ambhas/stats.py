@@ -211,7 +211,7 @@ class SpatOutlier():
         rain_filled[self.outliers] = np.nan
         return rain_filled
 
-def find_common_dates(date1, date2):
+def find_common_dates(date1, date2, tol=0):
     """
     Find the indices for the common dates
     Input:
@@ -227,7 +227,7 @@ def find_common_dates(date1, date2):
     date2.shape = 1,-1
     foo1 = np.tile(date1, (date2.shape))
     foo2 = np.tile(date2, (date1.shape))
-    dis = np.abs(foo1-foo2) <=1
+    dis = np.abs(foo1-foo2) <=tol
     foo = np.argmax(dis, axis=0)
     ind1 = np.zeros(len(date1))
     ind1 = ind1.astype(bool)
