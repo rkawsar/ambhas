@@ -15,6 +15,7 @@ from ambhas.gis import utm2image
 import matplotlib.nxutils as nx
 from ambhas.xls import xlsread
 from scipy.stats import nanstd, nanmean
+import os
 
 def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median', alpha=0.1):
     """
@@ -166,12 +167,68 @@ def corner_to_grid(xls_in, xls_out, in_sheet='Sheet1', res=5, rows=(2,67)):
         print("%i/%i"%(i+1,xy.shape[0]))
     
     book.save(xls_out) 
+    
+def extract_over_station(xls_in, xls_out, files, band=1, n=66, sort=True, verbose=False):
+    """
+    it reads the gis file defined in the files
+    then extract the data at coordinates defined in the xls_in
+    and then write the data in the xls_out file
+        
+    Input:
+        xls_in: the name of the input xls file containing the co-ordinates of the plot
+        xls_out: the xls file in which the output will be written
+        files: the data source file name in the gis format, these files must be in the 
+            tiff format
+        band: band of the raster data to extract
+        n: number of data fields in the input xls file
+        sort: sort the files
+    """
+    if type(files) is not list:
+        raise TypeError('input files should be of list type')
+    if sort:
+        files.sort()
+    
+    xy = xlsread(xls_in).get_cells('B2:BO3', 'Sheet1')
+    book_out = xlwt.Workbook()
+
+    extracted_data = np.empty((len(files),n))
+    for gis_file,i in zip(files,range(len(files))):
+        dataset = gdal.Open(gis_file, GA_ReadOnly)
+        data = dataset.GetRasterBand(band).ReadAsArray() 
+        GT = dataset.GetGeoTransform()
+        dataset = None
+        
+        x,y = utm2image(GT,xy.T)
+        extracted_data[i,:] = data[y,x]
+        if verbose:
+            print('%s'%gis_file)        
+    
+    sheet = book_out.add_sheet('Sheet1')   
+    sheet.write(0,0,'File \ Plot no.')
+        
+    for i in range(extracted_data.shape[1]):
+        sheet.write(0,i+1,i+1)
+    
+    for gis_file,i in zip(files,range(len(files))):
+        sheet.write(i+1,0,os.path.basename(gis_file).split('.')[0])
+        
+    for i in range(extracted_data.shape[0]):
+        for j in range(extracted_data.shape[1]):
+            sheet.write(i+1, j+1, extracted_data[i,j])
+    book_out.save(xls_out)
 
 if __name__=='__main__':
+    import glob
     # example for corner_to_grid
     xls_in = '/home/tomer/surface_sm/raw_data/locations.xls'    
     xls_out = '/home/tomer/temp/temp.xls'
-    corner_to_grid(xls_in, xls_out, in_sheet='utm')
+    #corner_to_grid(xls_in, xls_out, in_sheet='utm')
+    
+    xls_in = '/home/tomers/berambadi/plots_66/plot_66_centers.xls'
+    xls_out = '/home/tomers/foo.xls'
+    files = glob.glob('/home/tomers/sm_downscaling/output/merged_sm/2013-09-17/tiff/*.tif')
+    extract_over_station(xls_in, xls_out, files, band=1, n=66)
+    
     
     
     
