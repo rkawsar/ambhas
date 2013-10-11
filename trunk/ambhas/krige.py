@@ -130,18 +130,18 @@ class OK:
         
         Input:
             Xg:     x location where krigged data is required
-            Yg:     y location whre kirgged data is required
+            Yg:     y location whre krigged data is required
             model_par: see the vario_model
             model_type: see the vario_model
         """
-        avg_vario = np.empty((len(self.x), (len(Xg)-1)*(len(Yg)-1)))
+        avg_vario = np.empty((len(self.x), (len(Yg)-1)*(len(Xg)-1)))
         for k in range(len(self.x)):
             
-            avg_vario_ens = np.empty((len(Xg)-1, len(Yg)-1))
-            for i in range(len(Xg)-1):
-                for j in range(len(Yg)-1):
-                    Xg_rand = Xg[i]+np.random.rand(10)*(Xg[i+1]-Xg[i])
-                    Yg_rand = Yg[j]+np.random.rand(10)*(Yg[j+1]-Yg[j])    
+            avg_vario_ens = np.empty((len(Yg)-1, len(Xg)-1))
+            for i in range(len(Yg)-1):
+                for j in range(len(Xg)-1):
+                    Xg_rand = Xg[j]+np.random.rand(10)*(Xg[j+1]-Xg[j])
+                    Yg_rand = Yg[i]+np.random.rand(10)*(Yg[i+1]-Yg[i])    
 
                     DOR = ((self.x[k] - Xg_rand)**2 + (self.y[k] - Yg_rand)**2)**0.5
                     avg_vario_ens[i,j] = self.vario_model(DOR, model_par, model_type).mean()
@@ -241,8 +241,8 @@ class OK:
             Zg[k] = np.sum(E[:n,0]*self.z)
             s2_k[k] = np.sum(E[:n,0]*GR[:n,0])+ E[n, 0]
         
-        self.Zg = Zg.reshape(len(Xg)-1, len(Yg)-1)
-        self.s2_k = s2_k.reshape(len(Xg)-1, len(Yg)-1)
+        self.Zg = Zg.reshape(len(Yg)-1, len(Xg)-1)
+        self.s2_k = s2_k.reshape(len(Yg)-1, len(Xg)-1)
             
 if __name__ == "__main__":          
     # generate some sythetic data
