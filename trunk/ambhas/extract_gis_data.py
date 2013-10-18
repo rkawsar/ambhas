@@ -31,6 +31,7 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median
         ds: the data source file name in the gis format, these files must be in the 
             tiff format
         ds_short_name:  the name that will appear as header in the output xls file
+                        If None, than it will use the file names
         band: band of the raster data to extract
         n: number of data fields in the input xls file
         method:
@@ -43,9 +44,12 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median
         raise TypeError('input ds should be of list type')
     
     book_out = xlwt.Workbook()
-
+    
+    
+    file_basename = []        
     final_data = np.empty((n,2,len(ds)))
     for k in range(len(ds)):
+        file_basename.append(os.path.basename(ds[k]))
         dataset = gdal.Open(ds[k], GA_ReadOnly)
         data = dataset.GetRasterBand(band).ReadAsArray() 
         GT = dataset.GetGeoTransform()
@@ -94,6 +98,9 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median
         sheet_median.write(i+1,0,i+1)
         sheet_std.write(i+1,0,i+1)
     
+    if ds_short_name is None:
+        ds_short_name = file_basename
+        
     for i in range(len(ds)):
         sheet_median.write(0,i+1,ds_short_name[i])
         sheet_std.write(0,i+1,ds_short_name[i])
