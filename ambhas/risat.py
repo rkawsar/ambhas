@@ -18,6 +18,7 @@ from ambhas.gis import utm2deg, deg2utm,Pixel2Geo
 import numpy as np
 from xml.dom.minidom import parseString
 from scipy.signal import medfilt2d, wiener
+import os
 
 def speckle_filter(ifile, ofile):
     """
@@ -48,21 +49,30 @@ def speckle_filter(ifile, ofile):
     output_dataset = None
 
 
-def raw_bc(risat_dir, risat_file, grid_file, out_file):
+def raw_bc(risat_dir, risat_file, grid_file, out_file, pol="HH"):
     """
     Input:
         risat_dir
         risat_file
         out_file
+        pol: polarization
     """
     
-    xml_file = risat_dir + 'product.xml'
-    band_meta_file = risat_dir + 'BAND_META.txt'
-    grid_file = risat_dir + grid_file 
+    xml_file = os.path.join(risat_dir, 'product.xml')
+    band_meta_file = os.path.join(risat_dir, 'BAND_META.txt')
+    if os.path.exists(risat_file):
+        pass
+    else:
+        risat_file = os.path.join(risat_dir, risat_file)
+        
+    if os.path.exists(grid_file):
+        pass
+    else:
+        grid_file = os.path.join(risat_dir, grid_file)   
    
     
     # read the Digital Number (DNp)
-    dataset = gdal.Open(risat_dir+risat_file,GA_ReadOnly)
+    dataset = gdal.Open(risat_file,GA_ReadOnly)
     DN = dataset.GetRasterBand(1).ReadAsArray()
     RasterXSize = dataset.RasterXSize
     RasterYSize = dataset.RasterYSize
@@ -78,12 +88,11 @@ def raw_bc(risat_dir, risat_file, grid_file, out_file):
     data = file.read()
     file.close()
     dom = parseString(data)
-    foo1 = dom.getElementsByTagName('calibrationConstant')[0].toxml()
-    foo2 = dom.getElementsByTagName('calibrationConstant')[1].toxml()
-    if "HH" in foo1:
-        Kdb = dom.getElementsByTagName('calibrationConstant')[0].firstChild.data
-    elif "HH" in foo2:
-        Kdb = dom.getElementsByTagName('calibrationConstant')[1].firstChild.data
+    n_pol = len(dom.getElementsByTagName('calibrationConstant'))
+    for i in range(n_pol):
+        foo = dom.getElementsByTagName('calibrationConstant')[i].toxml()
+        if pol in foo:
+            Kdb = dom.getElementsByTagName('calibrationConstant')[i].firstChild.data
     Kdb = np.float(Kdb)
 
     # read incidence angle and satellite pass date
