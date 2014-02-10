@@ -65,6 +65,7 @@ def gw_model_file(in_fname, out_fname, figure_dir=None):
         lam = gw_model.lam
         sy = gw_model.sy
         discharge = gw_model.discharge
+        print('Sy = %.5f'%sy)
         
         #write the output
         sheet = out_book.add_sheet(sheet_name)
