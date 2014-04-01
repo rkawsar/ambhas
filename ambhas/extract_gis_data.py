@@ -12,10 +12,11 @@ from osgeo.gdalconst import *
 import gdal, xlrd, xlwt
 import numpy as np
 from ambhas.gis import utm2image
-import matplotlib.nxutils as nx
+#import matplotlib.nxutils as nx
 from ambhas.xls import xlsread
 from scipy.stats import nanstd, nanmean
 import os
+import matplotlib
 
 def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median', alpha=0.1):
     """
@@ -161,7 +162,9 @@ def corner_to_grid(xls_in, xls_out, in_sheet='Sheet1', res=5, rows=(2,67)):
         
         points = np.vstack([X.flatten(), Y.flatten()]).T
         
-        foo = nx.points_inside_poly(points, verts)
+        #foo = nx.points_inside_poly(points, verts)
+        foo = matplotlib.path.Path(verts).contains_points(points)
+        
         
         
         sheet.write(0,0,'x')
