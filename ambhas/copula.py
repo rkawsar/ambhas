@@ -237,6 +237,47 @@ class Copula():
         Y1_ul = foo_ul(data)
         
         return Y1_mean, Y1_std, Y1_ll, Y1_ul
+    
+    
+    def estimate_ens(self, data=None, pc=[50]):
+        """
+        this function estimates the mean, std, iqr for the generated
+        ensemble
+
+        Output:
+            Y1_ens = simulated ensemble at specified percentile in pc
+        """
+        n_pc = len(pc)
+        nbin = 50
+        #check if already the generate_xy has been called,
+        #if not called, call now
+        try:
+            self.X1
+            copula_ens = len(self.X1)
+        except:
+            copula_ens = 10000
+            self.generate_xy(copula_ens)
+        
+        if data is None:
+            data = self.X
+        
+        n_ens = copula_ens/nbin #average no. of bin in each class
+        ind_sort = self.X1.argsort()
+        x_mean = np.zeros((nbin,))
+        y_pc = np.zeros((nbin,n_pc))
+            
+        for ii in range(nbin):
+            x_mean[ii] = self.X1[ind_sort[n_ens*ii:n_ens*(ii+1)]].mean()
+            for jj in range(n_pc):
+                y_pc[ii,jj] = scoreatpercentile(self.Y1[ind_sort[n_ens*ii:n_ens*(ii+1)]], pc[jj])
+        
+        
+        Y1_pc = np.zeros((len(data),n_pc))
+        for jj in range(n_pc):
+            foo_pc = interp1d(x_mean, y_pc[:,jj], bounds_error=False)
+            Y1_pc[:,jj] = foo_pc(data)
+            
+        return Y1_pc
         
    
         
