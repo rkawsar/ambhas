@@ -1,23 +1,27 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Created on Wed Feb  9 19:13:28 2011
+Created on Wed Jun 18 17:11:48 2014
 
-@ author:                  Sat Kumar Tomer 
-@ author's webpage:        http://civil.iisc.ernet.in/~satkumar/
-@ author's email id:       satkumartomer@gmail.com
-@ author's website:        www.ambhas.com
+@author: Sat Kumar Tomer
+@email: satkumartomer@gmail.com
+@website: www.ambhas.com
 
+Python binding for the copula function from R using Rpy.
 """
+
 from __future__ import division
-from scipy.stats import kendalltau, pearsonr, spearmanr
+
 import numpy as np
-from scipy.integrate import quad
-from scipy.optimize import fmin
-import sys
 import statistics as st
 from scipy.interpolate import interp1d
+from scipy.stats import kendalltau, pearsonr, spearmanr
 from stats import scoreatpercentile
+
+from rpy2.robjects import r
+import rpy2.robjects.numpy2ri
+rpy2.robjects.numpy2ri.activate()
+r("library('copula')")
 
 class Copula():
     """
@@ -29,10 +33,10 @@ class Copula():
         Gumbel
         
     Example:
-        x = np.random.normal(size=25)
-        y = np.random.normal(size=25)
+        x = np.random.normal(size=20)
+        y = np.random.normal(size=20)
         foo = Copula(x, y, 'frank')
-        u,v = foo.generate_uv(500)
+        u,v = foo.generate_uv(1000)
     """
     
 
@@ -63,13 +67,16 @@ class Copula():
         self.family = family
         
         # estimate Kendall'rank correlation
-        tau = kendalltau(self.X, self.Y)[0]
-        self.tau = tau        
+        xy = np.vstack([X,Y])
+        r.assign('xy',xy.T)
+        tau = r('tau. <- cor(xy, method="kendall")[1,2]')[0]
+        self.xy = xy
+        self.tau = tau          
         
         # estimate pearson R and spearman R
-        self.pr = pearsonr(self.X, self.Y)[0]
-        self.sr = spearmanr(self.X, self.Y)[0]
-        
+        self.pr = r('cor(xy, method="pearson")[1,2]')[0]
+        self.sr = r('cor(xy, method="spearman")[1,2]')[0]
+                
         # estimate the parameter of copula
         self._get_parameter()
         
@@ -80,16 +87,17 @@ class Copula():
         
     def _get_parameter(self):
         """ estimate the parameter (theta) of copula
-        """        
+        """     
+        r.assign('tau.',self.tau)
         
         if self.family == 'clayton':
-            self.theta = 2*self.tau/(1-self.tau)
+            self.theta = r('iTau(claytonCopula(), tau.)')[0]
             
         elif self.family == 'frank':
-            self.theta = -fmin(self._frank_fun, -5, disp=False)[0]
+            self.theta = r('iTau(frankCopula(), tau.)')[0]
             
         elif self.family == 'gumbel':
-            self.theta = 1/(1-self.tau)
+            self.theta = r('iTau(gumbelCopula(), tau.)')[0]
     
     def generate_uv(self, n=1000):
         """
@@ -104,61 +112,19 @@ class Copula():
         """
         # CLAYTON copula
         if self.family == 'clayton':
-            U = np.random.uniform(size = n)
-            W = np.random.uniform(size = n)
-                
-            if self.theta <= -1:
-                raise ValueError('the parameter for clayton copula should be more than -1')
-            elif self.theta==0:
-                raise ValueError('The parameter for clayton copula should not be 0')
-                
-            if self.theta < sys.float_info.epsilon :
-                V = W
-            else:
-                V = U*(W**(-self.theta/(1 + self.theta)) - 1 + U**self.theta)**(-1/self.theta)
-    
+            UV = np.array(r('rCopula(%d, claytonCopula(%f))'%(n,self.theta)))
+            
         # FRANK copula
         elif self.family == 'frank':
-            U = np.random.uniform(size = n)
-            W = np.random.uniform(size = n)
+            UV = np.array(r('rCopula(%d, frankCopula(%f))'%(n,self.theta)))
             
-            if self.theta == 0:
-                raise ValueError('The parameter for frank copula should not be 0')
-            
-            if abs(self.theta) > np.log(sys.float_info.max):
-                V = (U < 0) + np.sign(self.theta)*U
-            elif abs(self.theta) > np.sqrt(sys.float_info.epsilon):
-                V = -np.log((np.exp(-self.theta*U)*(1-W)/W + np.exp(-self.theta)
-                            )/(1 + np.exp(-self.theta*U)*(1-W)/W))/self.theta
-            else:
-                V = W
-        
         # GUMBEL copula
         elif self.family == 'gumbel':
-            if self.theta <= 1 :
-                raise ValueError('the parameter for GUMBEL copula should be greater than 1')
-            if self.theta < 1 + sys.float_info.epsilon:
-                U = np.random.uniform(size = n)
-                V = np.random.uniform(size = n)
-            else:
-                u = np.random.uniform(size = n)
-                w = np.random.uniform(size = n)
-                w1 = np.random.uniform(size = n)
-                w2 = np.random.uniform(size = n)
-                
-                u = (u - 0.5) * np.pi
-                u2 = u + np.pi/2;
-                e = -np.log(w)
-                t = np.cos(u - u2/self.theta)/ e
-                gamma = (np.sin(u2/self.theta)/t)**(1/self.theta)*t/np.cos(u)
-                s1 = (-np.log(w1))**(1/self.theta)/gamma
-                s2 = (-np.log(w2))**(1/self.theta)/gamma
-                U = np.array(np.exp(-s1))
-                V = np.array(np.exp(-s2))
-        
-        self.U = U
-        self.V = V        
-        return U,V
+            UV = np.array(r('rCopula(%d, gumbelCopula(%f))'%(n,self.theta)))
+            
+        self.U = UV[:,0]
+        self.V = UV[:,1]
+        return self.U, self.V
     
     def generate_xy(self, n=1000):
         """
@@ -185,6 +151,26 @@ class Copula():
         self.Y1 = Y1
         
         return X1, Y1
+
+    def _inverse_cdf(self):
+        """
+        This module will calculate the inverse of CDF 
+        which will be used in getting the ensemble of X and Y from
+        the ensemble of U and V
+        
+        The statistics module is used to estimate the CDF, which uses
+        kernel methold of cdf estimation
+        
+        To estimate the inverse of CDF, interpolation method is used, first cdf 
+        is estimated at 100 points, now interpolation function is generated 
+        to relate cdf at 100 points to data
+        """
+        x2, x1 = st.cpdf(self.X, kernel = 'Epanechnikov', n = 100)
+        self._inv_cdf_x = interp1d(x2, x1)
+        
+        y2, y1 = st.cpdf(self.Y, kernel = 'Epanechnikov', n = 100)
+        self._inv_cdf_y = interp1d(y2, y1)
+
 
     def estimate(self, data=None):
         """
@@ -279,53 +265,46 @@ class Copula():
             
         return Y1_pc
         
-   
-        
-    def _inverse_cdf(self):
+    def gof(self, method='Sn', simulation='pb'):
         """
-        This module will calculate the inverse of CDF 
-        which will be used in getting the ensemble of X and Y from
-        the ensemble of U and V
+        Goodness-of-fit tests for copulas 
+        gofCopula from the R copula package
         
-        The statistics module is used to estimate the CDF, which uses
-        kernel methold of cdf estimation
-        
-        To estimate the inverse of CDF, interpolation method is used, first cdf 
-        is estimated at 100 points, now interpolation function is generated 
-        to relate cdf at 100 points to data
+        Input:
+            method: "Sn" -> test statistic from Genest, Rémillard, Beaudoin (2009)
+                    "SnB"-> test statistic from Genest, Rémillard, Beaudoin (2009)
+                    "SnC" -> test statistic from Genest et al. (2009).
+                    "AnChisq" -> Anderson-Darling test statistic
+                    "AnGamma -> similar to "AnChisq" but based on the gamma distribution 
+            simulation: "pb" -> parametric bootstrap
+                        "mult" -> multiplier
+        Output:
+            
         """
-        x2, x1 = st.cpdf(self.X, kernel = 'Epanechnikov', n = 100)
-        self._inv_cdf_x = interp1d(x2, x1)
+        xy = self.xy
+        r.assign('xy',xy.T)
+        theta = self.theta
+        r('foo <- gofCopula(claytonCopula(%f), xy, estim.method="itau", method="%s", simulation="%s")'%(theta,method,simulation))
+        p_value = float(r('foo$p.value')[0])
+        statistic = float(r('foo$statistic')[0])
+        parameter = float(r('foo$parameter')[0])
         
-        y2, y1 = st.cpdf(self.Y, kernel = 'Epanechnikov', n = 100)
-        self._inv_cdf_y = interp1d(y2, y1)
+        self.p_value = p_value
+        self.statistic = statistic 
+        self.parameter = parameter
         
+        return statistic, p_value, parameter
+
+
+if __name__ == '__main__':
+    x = np.random.normal(size=20)
+    y = 1.5*x+np.random.normal(size=20)
+    #foo = Copula(x, y, 'frank')
+    foo = Copula(x,y, 'gumbel')
+    #u,v = foo.generate_uv()
+    #x1,y1 = foo.generate_xy()
+    foo.gof(method='SnC')
     
-    def _integrand_debye(self,t):
-         """ 
-         Integrand for the first order debye function
-         """
-         return t/(np.exp(t)-1)
-         
-    def _debye(self, alpha):
-        """
-        First order Debye function
-        """
-        return quad(self._integrand_debye, sys.float_info.epsilon, alpha)[0]/alpha
     
-    def _frank_fun(self, alpha):
-        """
-        optimization of this function will give the parameter for the frank copula
-        """
-        diff = (1-self.tau)/4.0  - (self._debye(-alpha)-1)/alpha
-        return diff**2
-        
-        
-
-
-
-
-
-
-
+    
 
