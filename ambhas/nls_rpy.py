@@ -27,7 +27,7 @@ class Nls():
         
     """
     
-    def __init__(self, x, y, p=3, eq='a*x^b+c', par_ini = 'a=9,b=0.5,c=-10'):
+    def __init__(self, x, y, p=3, eq='a*x^b+c', par_ini = 'a=3,b=0.3,c=-15'):
         """ initialise the class with X and Y
         Input:
             x:        one dimensional numpy array
@@ -45,7 +45,7 @@ class Nls():
         self.n = len(x)
         self.p = p
     
-    def fit(self, summary=False):
+    def fit(self, summary=False, lower='0,0,-50'):
         x = self.x
         y = self.y
         eq = self.eq
@@ -53,8 +53,8 @@ class Nls():
         
         r.assign('x',x)
         r.assign('y',y)
-        
-        r('fit <- nls(y ~ %s, start = list(%s))'%(eq,par_ini))
+        r('control.foo <- nls.control(maxiter=500, minFactor = 1/4096)')
+        r('fit <- nls(y ~ %s, start = list(%s), control=control.foo, algorithm = "port", lower=list(%s))'%(eq,par_ini,lower))
         r('summary_fit <- summary(fit)')
         par = np.array(r('coef(summary_fit)'))
         
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     c = -15
     x = np.random.rand(25,)
     y = a*x**b +c + 0.5*np.random.normal(size=25,)
-    foo = Nls(x,y)
+    foo = Nls(x1,y1)
     par = foo.fit()
     #print par[:,0]
     x_eval = np.linspace(0,1)
