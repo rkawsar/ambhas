@@ -12,6 +12,7 @@ http://ag.arizona.edu/research/rosetta/rosetta.html#download
 """
 import matplotlib.nxutils as nx
 import numpy as np
+from matplotlib.path import Path
 
 
 class soil_texture:
@@ -70,7 +71,9 @@ class soil_texture:
                [11,  0.117, 0.114, 0.385, 0.046, -1.476, 0.57, 0.082, 0.06, 1.055, 0.89, 0.637, 0.34, -3.665, 1.80]]
         
         for i in range(12):
-            exec("if nx.pnpoly(sand, clay, t0):tt=i").replace('0',str(i))
+            exec("path = Path(t%i)"%i)
+            if path.contains_point((sand,clay)): tt=i
+            #exec("if nx.pnpoly(sand, clay, t0):tt=i").replace('0',str(i))
         
         if ~np.isnan(sand*clay):
             if sand+clay<100:
@@ -213,10 +216,11 @@ class saxton_rawls:
 
             
 if __name__=='__main__':
-    sand = 20
-    clay = 10
+    sand = 20.0
+    clay = 10.0
     
     foo = soil_texture(sand,clay)
+    print foo.soil_type
     print("theta_r = %.3f"%foo.theta_r)
     
     wp = wp_fun(foo.theta_s, foo.theta_r, foo.alpha, foo.n)

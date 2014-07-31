@@ -9,36 +9,50 @@ Created on Mon Feb 27 19:18:08 2012
 
 # import required libraries
 from osgeo.gdalconst import *
-import gdal, xlrd, xlwt
+import gdal
+import xlrd
+import xlwt
 import numpy as np
 from ambhas.gis import utm2image
-#import matplotlib.nxutils as nx
+# import matplotlib.nxutils as nx
 from ambhas.xls import xlsread
 from scipy.stats import nanstd, nanmean
 import os
 import matplotlib
 
+
 def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median', alpha=0.1):
     """
-    it reads the gis file defined in the ds
-    then extract the data at coordinates defined in each sheet of the xls_in file
+    Extract the data from the tiff files over selected field plots.
+
+    It reads the gis file defined in the ds then extract the data at 
+    coordinates defined in each sheet of the xls_in file
     and then write the data in the xls_out file
     the header of the data in the xls_out are written as defined in the 
     ds_short_name
+
+    Parameters
+    ----------
+    xls_in : str
+        the name of the input xls file containing the co-ordinates of the plot
+    xls_out : str
+        the xls file in which the output will be written
+    ds : tiff file
+        the data source file name in the gis format, these files must be in the tiff format
+    ds_short_name :  list of str
+        the name that will appear as header in the output xls file If None, than it will use the file names
+    band : int
+        band of the raster data to extract
+    n : int
+        number of data fields in the input xls file
+    method : {median, mean, truncated}
+        'median' for the median, 'mean' for the simple arithmetic mean, 'truncated' for the truncated mean of the data
+        
+    Return
+    -------
+    None : 
     
-    Input:
-        xls_in: the name of the input xls file containing the co-ordinates of the plot
-        xls_out: the xls file in which the output will be written
-        ds: the data source file name in the gis format, these files must be in the 
-            tiff format
-        ds_short_name:  the name that will appear as header in the output xls file
-                        If None, than it will use the file names
-        band: band of the raster data to extract
-        n: number of data fields in the input xls file
-        method:
-            median: median of the data
-            mean: simple arithmatic average
-            truncated: truncated mean
+    
     """
     
     if type(ds) is not list:

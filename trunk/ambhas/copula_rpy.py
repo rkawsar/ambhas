@@ -279,6 +279,9 @@ class Copula():
             simulation: "pb" -> parametric bootstrap
                         "mult" -> multiplier
         Output:
+            statistic -> test statistic
+            p_value -> p_value of the test
+            parameter -> estimates of the parameters for the hypothesized copula family
             
         """
         xy = self.xy

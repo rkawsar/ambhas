@@ -222,7 +222,11 @@ def read_ascii_grid(fname, dtype='float'):
     Input:
         fname:	input file name
         dtype: int or float
+    Output:
+        data:
+        header: nrows, ncols, xllcorner, yllcorner, cellsize, NODATA_value
     """
+    n_headers = 5 # number of headers in the file
     # open file for reading
     f = open(fname, 'r')
     
@@ -230,9 +234,15 @@ def read_ascii_grid(fname, dtype='float'):
     var = ['nrows', 'ncols', 'xllcorner', 'yllcorner', 'cellsize', 
            	'NODATA_value']
             
-    for i in range(6):
+    for i in range(n_headers):
         foo = f.readline().split()
         exec("%s = %s"%(foo[0],foo[1]))
+    
+    # check if NODATA_value exist in the file
+    foo = f.readline().split()
+    if 'NODATA_value' in foo[0]:
+        exec("%s = %s"%(foo[0],foo[1]))    
+        n_headers = n_headers+1
     
     # check if all the variables are read
     # if not then issue an error
@@ -244,7 +254,7 @@ def read_ascii_grid(fname, dtype='float'):
             print "The variable %s could not be find in the file"%v
     f.close()
     
-    data = np.genfromtxt(fname, skip_header=6, dtype = dtype)	
+    data = np.genfromtxt(fname, skip_header=n_headers, dtype = dtype)	
     if dtype == 'float':
         data[data==NODATA_value] = np.nan		
     elif dtype == 'int':
@@ -358,11 +368,15 @@ if __name__ == '__main__':
     #lat_s, lon_s = 36.12, -86.67
     #lat_f, lon_f = 33.94, -118.40
     #dis = great_circle_distance(lat_s,lon_s,lat_f,lon_f)
-    Ifile = '/home/tomer/mdb/input/DEM/15-R.tif'
-    Ofile = '/home/tomer/temp/foo.txt'
-    xmin, xmax, ymin, ymax = 138.0, 153.0, -38, -24.0
+    #Ifile = '/home/tomer/mdb/input/DEM/15-R.tif'
+    #Ofile = '/home/tomer/temp/foo.txt'
+    #xmin, xmax, ymin, ymax = 138.0, 153.0, -38, -24.0
     #xmin, xmax, ymin, ymax = 138.5, 152.5, -37.5, -24.5
-    cut_xy(Ifile, Ofile, xmin, xmax, ymin, ymax)
+    #cut_xy(Ifile, Ofile, xmin, xmax, ymin, ymax)
+    
+    file_soil = '/home/tomers/Projects/aicha/soil_map/soil.grd'
+    data, header = read_ascii_grid(file_soil, dtype='int')
+    print data.shape
     
 	
 	
