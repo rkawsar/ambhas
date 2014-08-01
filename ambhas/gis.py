@@ -243,6 +243,8 @@ def read_ascii_grid(fname, dtype='float'):
     if 'NODATA_value' in foo[0]:
         exec("%s = %s"%(foo[0],foo[1]))    
         n_headers = n_headers+1
+    else:
+        NODATA_value = np.nan
     
     # check if all the variables are read
     # if not then issue an error
@@ -376,7 +378,6 @@ if __name__ == '__main__':
     
     file_soil = '/home/tomers/Projects/aicha/soil_map/soil.grd'
     data, header = read_ascii_grid(file_soil, dtype='int')
-    print data.shape
-    
+    print data.shape, data.max()
 	
 	

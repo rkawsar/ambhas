@@ -47,17 +47,17 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median
         number of data fields in the input xls file
     method : {median, mean, truncated}
         'median' for the median, 'mean' for the simple arithmetic mean, 'truncated' for the truncated mean of the data
-        
+
     Return
     -------
-    None : 
-    
-    
+    None
+
+
     """
-    
+
     if type(ds) is not list:
         raise TypeError('input ds should be of list type')
-    
+
     book_out = xlwt.Workbook()
     
     
@@ -241,7 +241,7 @@ def extract_over_station(xls_in, xls_out, files, band=1, n=66, sort=True, verbos
             sheet.write(i+1, j+1, extracted_data[i,j])
     book_out.save(xls_out)
 
-if __name__=='__main__':
+if __name__ =='__main__':
     import glob
     # example for corner_to_grid
     xls_in = '/home/tomer/surface_sm/raw_data/locations.xls'    
