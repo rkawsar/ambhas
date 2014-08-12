@@ -276,24 +276,26 @@ class KAPPA:
 
 if __name__=='__main__':
     #generate two random variable
-    obs = np.random.normal(size=100)    
-    sim = np.random.normal(size=100)  
+    obs = np.random.normal(size=100)
+    sim = np.random.normal(size=100)
     
+
     # print error indices
-    print(pc_bias(sim,obs))
-    print(apb(sim,obs)) 
-    print(rmse(sim,obs)) 
-    print(mae(sim,obs)) 
-    print(bias(sim,obs)) 
-    print(NS(sim,obs)) 
-    print(L(sim,obs))
-    print(correlation(sim,obs))
+    #print(pc_bias(sim,obs))
+    #print(apb(sim,obs)) 
+    #print(rmse(sim,obs)) 
+    #print(mae(sim,obs)) 
+    #print(bias(sim,obs)) 
+    #print(NS(sim,obs)) 
+    #print(L(sim,obs))
+    #print(correlation(sim,obs))
     
-    kappa_class = KAPPA(soil_sat,soil_obs)
-    kappa_mat, kappa_coeff = kappa_class.kappa_coeff()
-    data = range(1,14)
-    data_name = ['silty_loam', 'sand', 'silty_clay_loam', 'loam', 'clay_loam',
-                 'sandy_loam', 'silty_clay', 'sandy_clay_loam', 'loamy_sand ',
-                 'clay', 'silt', 'sandy_clay', 'gravelly_sandy_loam']
-    fname = '/home/tomer/svn/ambhas/examples/kappa.png'
+    
+    #kappa_class = KAPPA(soil_sat,soil_obs)
+    #kappa_mat, kappa_coeff = kappa_class.kappa_coeff()
+    #data = range(1,14)
+    #data_name = ['silty_loam', 'sand', 'silty_clay_loam', 'loam', 'clay_loam',
+    #             'sandy_loam', 'silty_clay', 'sandy_clay_loam', 'loamy_sand ',
+    #             'clay', 'silt', 'sandy_clay', 'gravelly_sandy_loam']
+    #fname = '/home/tomer/svn/ambhas/examples/kappa.png'
     #kappa_class.kappa_figure(fname, data, data_name)
