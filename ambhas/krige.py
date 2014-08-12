@@ -11,7 +11,6 @@ Created on Thu Jun  9 17:55:54 2011
 import numpy as np
 import matplotlib.pylab as plt
 
-
 class OK:
     """
     This performs the ordinary kriging
@@ -249,6 +248,7 @@ if __name__ == "__main__":
     x = np.random.rand(20)
     y = np.random.rand(20)
     z = 0.0*np.random.normal(size=20)+x+y
+    z[1] = np.NAN
     
     foo = OK(x,y,z)
     #ax,ay = foo.variogram('scattered')
@@ -266,13 +266,15 @@ if __name__ == "__main__":
     plt.plot(lags, G, 'k')
     plt.show()
     
-    Rx = np.linspace(-1,1,1050)
-    Ry = np.linspace(0,1,750)
+    Rx = np.linspace(-1,1,250)
+    Ry = np.linspace(0,1,150)
     XI,YI = np.meshgrid(Rx,Ry)
     foo.krige(XI, YI, model_par, 'exponential')
     
-    plt.matshow(foo.Zg.reshape(750,1050))
+    plt.matshow(foo.Zg.reshape(150,250))
     plt.show()
+    
+    print('Processing over')
     
 #    # block kriging
 #    xg = np.linspace(0,1,5)
