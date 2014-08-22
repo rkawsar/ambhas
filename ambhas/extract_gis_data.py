@@ -25,10 +25,10 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median
     """
     Extract the data from the tiff files over selected field plots.
 
-    It reads the gis file defined in the ds then extract the data at 
+    It reads the gis file defined in the ds then extract the data at
     coordinates defined in each sheet of the xls_in file
     and then write the data in the xls_out file
-    the header of the data in the xls_out are written as defined in the 
+    the header of the data in the xls_out are written as defined in the
     ds_short_name
 
     Parameters

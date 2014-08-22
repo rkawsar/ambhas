@@ -146,9 +146,11 @@ def correlation(s,o):
     return corr
 
 
-def index_agreement(s,o):
+def index_agreement(s, o):
     """
 	index of agreement
+	
+	Willmott (1981, 1982) 
 	input:
         s: simulated
         o: observed
@@ -160,8 +162,24 @@ def index_agreement(s,o):
     			(np.abs(s-np.mean(o))+np.abs(o-np.mean(o)))**2))
     return ia
 
+def agreement_coefficient(s, o):
+    """
+    agreement coefficient
+    
+    An Agreement Coefficient for Image Comparison by Lei Ji and Kevin Gallo
+    input:
+        s: simulated
+        o: observed
+    output:
+        ac: agreement coefficient
+    """
+    s, o = filter_nan(s, o)
+    sbar = np.mean(s)
+    obar = np.mean(o)
+    ac = 1 - (np.sum((s-o)**2))/np.sum((np.abs(sbar-obar) + np.abs(s-sbar))*(np.abs(sbar-obar) + np.abs(o-obar)))
+    return ac
 
-def KGE(s,o):
+def KGE(s, o):
     """
     Kling-Gupta Efficiency
     input:
@@ -278,7 +296,6 @@ if __name__=='__main__':
     #generate two random variable
     obs = np.random.normal(size=100)
     sim = np.random.normal(size=100)
-    
 
     # print error indices
     #print(pc_bias(sim,obs))
@@ -289,7 +306,7 @@ if __name__=='__main__':
     #print(NS(sim,obs)) 
     #print(L(sim,obs))
     #print(correlation(sim,obs))
-    
+    print agreement_coefficient(obs*0.0, obs)
     
     #kappa_class = KAPPA(soil_sat,soil_obs)
     #kappa_mat, kappa_coeff = kappa_class.kappa_coeff()
@@ -299,3 +316,5 @@ if __name__=='__main__':
     #             'clay', 'silt', 'sandy_clay', 'gravelly_sandy_loam']
     #fname = '/home/tomer/svn/ambhas/examples/kappa.png'
     #kappa_class.kappa_figure(fname, data, data_name)
+    
+    print('processing over')

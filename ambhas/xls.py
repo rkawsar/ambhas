@@ -181,47 +181,56 @@ class xlswrite2(xlswrite):
         self.book = xlwt.Workbook()
         self.sheet_names = []
     
-    def write(self, data, cell_start, sheet, dates=False):
+    def write(self, data, cell_start, sheet, dates=False, orientation='row'):
+        """
+        Input:
+            orientation: {row,col}
+        """
         book = self.book
-        
+
         if dates:
             xf = xlwt.easyxf(num_format_str='DD/MM/YYYY')
-        
+
         if sheet not in self.sheet_names:
             worksheet = book.add_sheet(sheet)
             self.sheet_names.append(sheet)
         else:
             worksheet = book.get_sheet(self.sheet_names.index(sheet))
-        
-        
+
+
         # convert into row and col        
         row, col = self.__cell2ind__(cell_start)
 
         if isinstance(data, str)  or isinstance(data, float) or isinstance(data,int):
-            if dates:
-                worksheet.write(row,col,data, xf)
-            else:
-                worksheet.write(row,col,data)
-                
-        if data.ndim == 1:
-            for i in range(data.shape[0]):
-                if dates:
-                    worksheet.write(row+i,col, data[i], xf)
-                else:
-                    worksheet.write(row+i,col, data[i])
-                
-        else:
-            for i in range(data.shape[0]):
-                for j in range(data.shape[1]):
-                    if dates:
-                        worksheet.write(row+i, col+j, data[i,j], xf)
-                    else:
-                        worksheet.write(row+i, col+j, data[i,j])
+            self._write_cell(worksheet, row, col, data, dates)
 
-    
+        elif isinstance(data, np.ndarray):
+            if data.ndim == 1:
+                for i in range(data.shape[0]):
+                    self._write_cell(worksheet, row+i, col, data[i], dates)
+            else:
+                for i in range(data.shape[0]):
+                    for j in range(data.shape[1]):
+                        self._write_cell(worksheet, row+i, col+j, data[i,j], dates)
+
+        elif isinstance(data, list):
+            for i in range(len(data)):
+                if orientation == 'row':
+                    self._write_cell(worksheet, row+i, col, data[i], dates)
+                elif orientation == 'col':
+                    self._write_cell(worksheet, row, col+i, data[i], dates)
+                else:
+                    print("Orientation has to be either 'row' or 'col' ")
+
+    def _write_cell(self, worksheet, row_cell, col_cell, data_cell, dates):
+        if dates:
+            xf = xlwt.easyxf(num_format_str='DD/MM/YYYY')
+            worksheet.write(row_cell, col_cell, data_cell, xf)
+        else:
+            worksheet.write(row_cell, col_cell, data_cell)
+
     def save(self):
         self.book.save(self.fname)
-
 
 if __name__ == "__main__":
     
@@ -246,6 +255,8 @@ if __name__ == "__main__":
     xls_out_file.write(var, 'a1', 'Sheet2')
     xls_out_file.write(var, 'e1', 'Sheet1')
     xls_out_file.save()
+    
+    print('processing over')
     
     
     
