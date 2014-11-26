@@ -45,7 +45,9 @@ class Nls():
         self.n = len(x)
         self.p = p
     
-    def fit(self, summary=False, lower='0,0,-50'):
+    def fit(self, summary=False, lower=None, upper =None):
+        self.lower = lower
+        self.upper = upper
         x = self.x
         y = self.y
         eq = self.eq
@@ -53,13 +55,19 @@ class Nls():
         
         r.assign('x',x)
         r.assign('y',y)
-        r('control.foo <- nls.control(maxiter=500, minFactor = 1/4096)')
-        r('fit <- nls(y ~ %s, start = list(%s), control=control.foo, algorithm = "port", lower=list(%s))'%(eq,par_ini,lower))
+        r('control.foo <- nls.control(maxiter=100, minFactor = 1/4096)')
+        
+        if lower is not None and upper is not None:
+            r('fit <- nls(y ~ %s, start = list(%s), control=control.foo, algorithm = "port", lower=list(%s), upper=list(%s))'%(eq,par_ini,lower,upper))
+        else:
+            r('fit <- nls(y ~ %s, start = list(%s), control=control.foo)'%(eq,par_ini))
         r('summary_fit <- summary(fit)')
         par = np.array(r('coef(summary_fit)'))
         
         if summary:
             print r('summary(fit)')
+            print r('coef(fit)')
+            print r('summary(fit)$cov.unscaled * summary(fit)$sigma^2')
             
         return par    
     
@@ -67,18 +75,22 @@ class Nls():
         """
         0.05 means 95 % confidence interval
         """
-        self.fit()
+        self.fit(lower=self.lower, upper=self.upper)
         n = self.n
         p = self.p
-        
+        print r('fit')
         dof = n-p
         tval = t.ppf(1-alpha/2., dof) 
                 
         y_hat = np.empty(x_eval.shape)
         y_hat_se = np.empty(x_eval.shape)
         for i in xrange(len(x_eval)):
-            eq_x = self.eq.replace('x','%f'%x_eval[i])
-            foo = np.array(r('delta.method(fit, "%s")'%eq_x))
+            li = self.eq.rsplit('x', 1)
+            eq_x = ('%f'%x_eval[i]).join(li)
+            #eq_x = self.eq.replace('x','%f'%x_eval[i])
+                        
+            #foo = np.array(r('delta.method(fit, "%s")'%eq_x))
+            foo = np.array(r('deltaMethod(fit, "%s")'%eq_x))
             y_hat[i] = foo[0]
             y_hat_se[i] = foo[1]
         y_ul = y_hat + tval*y_hat_se
@@ -93,13 +105,15 @@ if __name__ == '__main__':
     a = 10
     b = 0.5
     c = -15
-    x = np.random.rand(25,)
-    y = a*x**b +c + 0.5*np.random.normal(size=25,)
-    foo = Nls(x1,y1)
-    par = foo.fit()
+    #x = np.random.rand(25,)
+    #y = a*x**b +c + 0.1*np.random.normal(size=25,)
+    #foo = Nls(x,y)
+    foo = Nls(x, y, p=4, eq='a + (b-a)/(1+exp(-k*(x-c)))', par_ini = 'a=0,b=8,c=4.1,k=5.0')
+    par = foo.fit(lower='0,0,0,0', upper='2,10,10,10')
+    
     #print par[:,0]
-    x_eval = np.linspace(0,1)
-    y_hat, y_ul, y_ll = foo.predict(x_eval)
+    x_eval = np.linspace(3,7)
+    y_hat, y_ul, y_ll = foo.predict(x_eval, alpha=0.05)
     
     plt.plot(x,y,'.')
     plt.plot(x_eval, y_hat)

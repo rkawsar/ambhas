@@ -284,10 +284,12 @@ class Copula():
             parameter -> estimates of the parameters for the hypothesized copula family
             
         """
+        family = self.family
+                
         xy = self.xy
         r.assign('xy',xy.T)
         theta = self.theta
-        r('foo <- gofCopula(claytonCopula(%f), xy, estim.method="itau", method="%s", simulation="%s")'%(theta,method,simulation))
+        r('foo <- gofCopula(%sCopula(%f), xy, estim.method="itau", method="%s", simulation="%s")'%(family,theta,method,simulation))
         p_value = float(r('foo$p.value')[0])
         statistic = float(r('foo$statistic')[0])
         parameter = float(r('foo$parameter')[0])
@@ -303,11 +305,19 @@ if __name__ == '__main__':
     x = np.random.normal(size=20)
     y = 1.5*x+np.random.normal(size=20)
     #foo = Copula(x, y, 'frank')
-    foo = Copula(x,y, 'gumbel')
+    foo = Copula(x,y, 'frank')
     #u,v = foo.generate_uv()
     #x1,y1 = foo.generate_xy()
-    foo.gof(method='SnC')
+    print foo.gof(method='SnC')
+    print foo.theta
     
+    foo = Copula(x,y, 'clayton')
+    print foo.gof(method='SnC')
+    print foo.theta
+    
+    foo = Copula(x,y, 'gumbel')
+    print foo.gof(method='SnC')
+    print foo.theta
     
     
 

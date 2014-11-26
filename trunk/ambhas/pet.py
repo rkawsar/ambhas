@@ -156,7 +156,7 @@ def pt(Hnet, Tav, EL=0):
     return PET
     
 
-def hm(Tmx, Tmn, lat_deg, lon_deg, doy,ze=5.5):
+def hm(Tmx, Tmn, Tav, lat_deg, lon_deg, doy,ze=5.5):
     """
     Compute the potential evapotranspiration using the Hargreaves method
     for a reference (alfalfa) crop
@@ -170,7 +170,7 @@ def hm(Tmx, Tmn, lat_deg, lon_deg, doy,ze=5.5):
     Input:
         Tmx: maximum air temperature for the day (deg C)
         Tmn: minimum air temperature for the day (deg C)
-        lat_deg:        latitude in degree ( south is negative)
+        lat_deg:        latitude in degree (south is negative)
         lon_deg:        longitude in degree (west is negative)
         doy:            day of year
         ze :            time zone in hour
@@ -183,10 +183,13 @@ def hm(Tmx, Tmn, lat_deg, lon_deg, doy,ze=5.5):
         PET: 
     """
     foo = sun(doy, lat_deg, lon_deg)
-    H0 = foo.daily_ETR()
+    H0 = foo.daily_ETR() # in kWh/m2/day
+    H0 = H0*3.6 # convert to MJm^{-2}d&{-1}
     LE = 0.0023*H0*np.sqrt((Tmx-Tmn))*(Tav+17.8)
     l = latent_head_vap(Tav)
+    
     PET = LE/l
+    print H0
     
     return PET
 
@@ -218,21 +221,26 @@ def rn(Rn, Tav):
 
 if __name__ == '__main__':
     # pm
-    Hnet = 100
-    Tav = 15
-    Rh = 0.8
-    uz = 5
-    EL = 800
-    print pm(Hnet, Tav, Rh, uz, EL, co2 = 330)
+    #Hnet = 100
+    #Tav = 20
+    #Rh = 0.8
+    #uz = 5
+    #EL = 800
+    #print pm(Hnet, Tav, Rh, uz, EL, co2 = 330)
     
     # pt
-    print pt(Hnet, Tav, EL)
+    #print pt(Hnet, Tav, EL)
     
     #hm
-    lat_deg = 11
-    lon_deg = 76
-    doy = 180
-    Tmx = 20
-    Tmn = 10
-    print hm(Tmx, Tmn, lat_deg, lon_deg, doy,ze=5.5)
+    lat_deg = 13.73
+    lon_deg = 10
+    doy = 105
+    Tmx = 34.8
+    Tmn = 25.6
+    Tav = 30.0
+    hm(Tmx, Tmn, Tav, lat_deg, lon_deg, doy, ze=5.5)
+    
+    lat_deg = 45.72
+    doy = 196
+    hm(Tmx, Tmn, Tav, lat_deg, lon_deg, doy, ze=5.5)
  

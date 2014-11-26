@@ -102,7 +102,8 @@ def extract_orbit(h5_file):
         f.close()
     return asc
 
-    
+
+
 if __name__ == "__main__":
     import glob
     h5_file = '/home/tomer/amsr2/data/h5/GW1AM2_20130722_01D_EQMD_L3SGSMCHA1100100.h5'
@@ -114,3 +115,5 @@ if __name__ == "__main__":
     sm = extract_smc(h5_file, lat, lon)
     sm_dates = extract_dates(h5_file)
     asc = extract_orbit(h5_file)
+    
+    

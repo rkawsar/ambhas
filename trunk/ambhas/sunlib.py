@@ -50,8 +50,8 @@ class sun():
 
         
         
-        self._Isc = 1367 # solar constant (W/m^2)
-
+        self._Isc = 1.367 # solar constant (kW/m^2)
+        
         B_deg = (doy-1)*360/365
         B_rad = B_deg*np.pi/180
         
@@ -63,7 +63,7 @@ class sun():
         # declination
         delta = 0.4093*np.sin(2*np.pi*(284+doy)/365)
         self._delta = delta
-    
+            
         # relative distance of the earth from sun
         dr = 1 + 0.0033*np.cos(2*np.pi*doy/365)
         self.dr = dr
@@ -115,6 +115,7 @@ class sun():
         Input:
             
         Output:
+        H0:    kWh/m2/day
             
         """
         lat_rad = self._lat_rad
@@ -122,12 +123,12 @@ class sun():
         
         # sunset hour angle
         ws = np.arccos(-np.tan(lat_rad)*np.tan(delta))
-        # maximum sunshine hour lenght
+        
+        # maximum sunshine hour length
         self.N = ws*24/np.pi
 
-        H0 = (1/np.pi)*self._Isc*self.dr*(ws*np.sin(delta)*np.sin(lat_rad) +
+        H0 = (24/np.pi)*self._Isc*self.dr*(ws*np.sin(delta)*np.sin(lat_rad) +
                 np.cos(delta)*np.cos(lat_rad))
-                
         return H0
     
     def set_rise(self):
@@ -219,3 +220,13 @@ def sun_rise_set(day,month,year,lw=-76.44,ln=11.95):
     Tset = np.mod(Jset,1)*24+5.5+12
     
     return Trise, Tset 
+
+if __name__ == '__main__':
+    lat_deg = 45.72
+    lon_deg = 10
+    doy = 196
+    Tmx = 26.6
+    Tmn = 14.8
+    Tav = 20.7
+    foo = sun(doy, lat_deg, lon_deg)
+    print foo.daily_ETR()

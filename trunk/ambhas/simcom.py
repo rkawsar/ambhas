@@ -52,6 +52,8 @@ def th_dry_wet(rsm, fwet):
     foo = interp1d(f_x, x)
     if fwet<min(f_x):
         th = x.min()
+    elif fwet>max(f_x):
+        th = x.max()
     else:
         th = foo(fwet)
     
@@ -85,7 +87,7 @@ def fun_ctg_ctl(rsm, a_ctg=1.0, a_ctl=1.0):
     return ctg, ctl
 
 
-def simcom(fsm_past, csm_current, csm_past, k, fc, wp, compute_fsss=True):
+def simcom(fsm_past, csm_current, csm_past, k, fc, wp):
     """
     simple model for combining soil moisture at two different spatio-temporal scale
 
@@ -108,58 +110,65 @@ def simcom(fsm_past, csm_current, csm_past, k, fc, wp, compute_fsss=True):
     #fsm_past *= csm_current/np.nanmean(fsm_past)
 
     dt_csm = csm_current - csm_past # temporal different in coarse scale soil moisture
-
-    fwet, fdry = sigmoid(dt_csm, k)
-
-    rsm = (fsm_past-wp)/(fc-wp)
-    th = th_dry_wet(rsm, fwet)
-
-    area_drying, area_wetting = area_drying_wetting(rsm, th)
-
-    ctg, ctl = fun_ctg_ctl(rsm, 1.0, 1.0)
-
-    try:
-        min_ctl = np.min(ctl[area_drying])
-    except:
-        min_ctl = 0
-    try:
-        min_ctg = np.min(ctg[area_wetting])
-    except:
-        min_ctg = 0
-
-    try:
-        max_ctl = np.max(ctl[area_drying])
-    except:
-        max_ctl = 1.0
-    try:
-        max_ctg = np.max(ctg[area_wetting])
-    except:
-        max_ctg = 1.0
-    #max_ctl = 0.48
-    print min_ctl, max_ctl
-    if compute_fsss:
-        fsss = create_nan(ctg.shape)
-        #fsss[area_drying] = -(ctl[area_drying] - min_ctl)
-        #fsss[area_wetting] = ctg[area_wetting] - min_ctg
-        #if dt_csm>0:
-        #    fsss[area_drying] = -(ctl[area_drying] - min_ctl)/(max_ctl-min_ctl)
-        #    fsss[area_wetting] = (ctg[area_wetting] - min_ctg)/(max_ctg-min_ctg)
-        #else:
-        #    fsss[area_drying] = 5*(ctl[area_drying] - min_ctl)/(max_ctl-min_ctl)
-        #    fsss[area_wetting] = -(ctg[area_wetting] - min_ctg)/(max_ctg-min_ctg)
-        
-        fsss[area_drying] = 5.0*(ctl[area_drying] - min_ctl)/(max_ctl-min_ctl)
-        fsss[area_wetting] = -(ctg[area_wetting] - min_ctg)/(max_ctg-min_ctg)
-        print np.nanmean(fsss)
-
+    
+    if k is None:
+        fsss = np.ones(fsm_past.shape)
     else:
-        fsss = np.ones(ctg.shape)
+        fwet, fdry = sigmoid(dt_csm, k)
+    
+        rsm = (fsm_past-wp)/(fc-wp)
+        th = th_dry_wet(rsm, fwet)
+    
+        #area_drying, area_wetting = area_drying_wetting(rsm, th)
+        #fsss = (fsm_past - th)/(np.nanmean(fsm_past)-th)
+        fsss = (rsm - th)/(np.nanmean(rsm)-th)
+        #ctg, ctl = fun_ctg_ctl(rsm, 1.0, 1.0)
+    
+    
+#===============================================================================
+#     try:
+#         min_ctl = np.min(ctl[area_drying])
+#     except:
+#         min_ctl = 0
+#     try:
+#         min_ctg = np.min(ctg[area_wetting])
+#     except:
+#         min_ctg = 0
+# 
+#     try:
+#         max_ctl = np.max(ctl[area_drying])
+#     except:
+#         max_ctl = 1.0
+#     try:
+#         max_ctg = np.max(ctg[area_wetting])
+#     except:
+#         max_ctg = 1.0
+#     #max_ctl = 0.48
+#     print min_ctl, max_ctl
+#     if compute_fsss:
+#         fsss = create_nan(ctg.shape)
+#         #fsss[area_drying] = -(ctl[area_drying] - min_ctl)
+#         #fsss[area_wetting] = ctg[area_wetting] - min_ctg
+#         #if dt_csm>0:
+#         #    fsss[area_drying] = -(ctl[area_drying] - min_ctl)/(max_ctl-min_ctl)
+#         #    fsss[area_wetting] = (ctg[area_wetting] - min_ctg)/(max_ctg-min_ctg)
+#         #else:
+#         #    fsss[area_drying] = 5*(ctl[area_drying] - min_ctl)/(max_ctl-min_ctl)
+#         #    fsss[area_wetting] = -(ctg[area_wetting] - min_ctg)/(max_ctg-min_ctg)
+#         
+#         fsss[area_drying] = 5.0*(ctl[area_drying] - min_ctl)/(max_ctl-min_ctl)
+#         fsss[area_wetting] = -(ctg[area_wetting] - min_ctg)/(max_ctg-min_ctg)
+#         print np.nanmean(fsss)
+# 
+#     else:
+#===============================================================================
+    #fsss = np.ones(fsm_past.shape)
 
-    fsss = fsss/np.nanmean(fsss)
+    #fsss = fsss/np.nanmean(fsss)
 
     fsm_current = fsm_past + fsss*dt_csm
 
-    return fsm_current, fsss, ctl, area_drying
+    return fsm_current, fsss
 
 
 if __name__ == '__main__':
@@ -264,11 +273,11 @@ if __name__ == '__main__':
      csm_past = np.nanmean(fsm_past)
  
      csm_current = 0.5*csm_past
-     k = 1.0
+     k = 40.0
      fc = 1.0
      wp = 0.0
-     fsm_current1, fsss, ctl, area_drying = simcom(fsm_past, csm_current, csm_past, k, fc, wp, compute_fsss=False)
-     fsm_current2, fsss, ctl, area_drying = simcom(fsm_past, csm_current, csm_past, k, fc, wp)
+     fsm_current1, fsss1 = simcom(fsm_past, csm_current, csm_past, None, fc, wp)
+     fsm_current2, fsss = simcom(fsm_past, csm_current, csm_past, k, fc, wp)
      print np.nanmean(fsm_current2)-np.nanmean(fsm_past) #, np.sum(fsm_past<fsm_current2)/np.size(fsm_current2)
  
      plt.subplot(2, 2, 1)
@@ -277,7 +286,7 @@ if __name__ == '__main__':
      plt.colorbar()
  
      plt.subplot(2, 2, 2)
-     plt.imshow(fsss, interpolation='nearest')
+     plt.imshow(fsss1, interpolation='nearest')
      plt.axis('off')
      plt.colorbar()
  
@@ -287,7 +296,7 @@ if __name__ == '__main__':
      plt.colorbar()
  
      plt.subplot(2, 2, 4)
-     plt.plot(fsm_past, fsm_current2, '.k')
+     plt.plot(fsm_past, fsm_current1, '.k')
      plt.plot([0, 1], [0, 1], 'r', lw=2)
  
      plt.savefig('../temp/temp.png')

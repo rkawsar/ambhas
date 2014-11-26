@@ -27,6 +27,7 @@ functions:
 import numpy as np
 from random import randrange
 import matplotlib.pyplot as plt
+from scipy.stats import kendalltau
 
 def filter_nan(s,o):
     """
@@ -43,6 +44,18 @@ def filter_nan(s,o):
         s = data[:,0]
         o = data[:,1]
     return s, o
+
+def kendalltau_nan(s,o):
+    """
+    kendall's tau
+    input:
+        s: simulated
+        o: observed
+    output:
+        kendall's tau
+    """
+    s, o = filter_nan(s, o)
+    return kendalltau(s, o)[0]
 
 def pc_bias(s,o):
     """
