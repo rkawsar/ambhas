@@ -25,7 +25,7 @@ class calibrate:
     radar_file.save_tiff(radar_out_file)
     """
     
-    def __init__(self,inpath):
+    def __init__(self, inpath):
         
         self.inpath = inpath
         # read the data, GCPs and projection
@@ -54,7 +54,7 @@ class calibrate:
         self.SigmaVH = 20*numpy.log10(S_VH_ABS)
         self.SigmaVV = 20*numpy.log10(S_VV_ABS)
     
-    def speckle_filter(self,filter_name,ws):
+    def speckle_filter(self, filter_name, ws):
         
         if filter_name == 'median':
             # filter the image using median filter 
@@ -73,7 +73,7 @@ class calibrate:
         else:
             print 'the name of filter not understood'
             
-    def save_tiff(self,outfile_sigma):
+    def save_tiff(self, outfile_sigma):
         # save the data as Geotiff
         driver = gdal.GetDriverByName('GTiff')
         output_dataset = driver.Create(outfile_sigma, self.RasterXSize, self.RasterYSize,4,gdal.GDT_Float32)
@@ -85,7 +85,7 @@ class calibrate:
         output_dataset.GetRasterBand(4).WriteArray(self.SigmaVV, 0, 0)
         output_dataset = None
     
-    def incidence_angle(self,outfile_ia):
+    def incidence_angle(self, outfile_ia):
         # make the incidence angle image
         xmldoc = minidom.parse(os.path.join(self.inpath,"lutSigma.xml"))
         SigmaGains = xmldoc.getElementsByTagName('gains')

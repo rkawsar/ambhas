@@ -21,7 +21,7 @@ import os
 import matplotlib
 
 
-def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median', alpha=0.1):
+def extract_gis(xls_in, xls_out, ds, ds_short_name=None, band=1, n=66, method='median', alpha=0.1):
     """
     Extract the data from the tiff files over selected field plots.
 
@@ -54,34 +54,34 @@ def extract_gis(xls_in, xls_out, ds, ds_short_name, band=1, n=66, method='median
 
 
     """
-
+    
     if type(ds) is not list:
         raise TypeError('input ds should be of list type')
 
     book_out = xlwt.Workbook()
-    
-    
-    file_basename = []        
-    final_data = np.empty((n,2,len(ds)))
+
+
+    file_basename = []
+    final_data = np.empty((n, 2, len(ds)))
     for k in range(len(ds)):
         file_basename.append(os.path.basename(ds[k]))
         dataset = gdal.Open(ds[k], GA_ReadOnly)
-        data = dataset.GetRasterBand(band).ReadAsArray() 
+        data = dataset.GetRasterBand(band).ReadAsArray()
         GT = dataset.GetGeoTransform()
-        
+
         book = xlrd.open_workbook(xls_in)
-        
+
         for i in xrange(n):
             sheet = book.sheet_by_name(str(i+1))
             xy = np.empty((sheet.nrows-1,2))
             for j in range(xy.shape[0]):
                 xy[j,0] = sheet.cell_value(j+1,0)    
                 xy[j,1] = sheet.cell_value(j+1,1)
-                    
-            x,y = utm2image(GT,xy)
-                
+
+            x, y = utm2image(GT,xy)
+
             extracted_data = data[y,x]
-            
+
             if method == 'median':
                 final_data[i,0,k] = np.median(extracted_data)
                 final_data[i,1,k] = nanstd(extracted_data)

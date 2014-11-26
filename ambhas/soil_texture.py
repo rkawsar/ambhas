@@ -210,11 +210,7 @@ class saxton_rawls:
         theta_s = self.sm_s()
         theta_s_df = theta_s*(1-density/2.65)        
         return theta_s_df
-        
-        
-        
 
-            
 if __name__=='__main__':
     sand = 20.0
     clay = 10.0
@@ -229,6 +225,9 @@ if __name__=='__main__':
     clay = 23
     organic_matter = 2
     foo = saxton_rawls(sand, clay, organic_matter)
-    print foo.sm_s_df(1.49)
+    #print foo.sm_s_df(1.49)
+    
+    
+    
     
     

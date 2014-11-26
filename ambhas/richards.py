@@ -15,6 +15,10 @@ import datetime
 import matplotlib.pyplot as plt
 from BIP.Bayes.lhs import lhs
 from scipy import stats
+import sys
+import logging
+import sys
+
 #np.seterr(all='raise')
 
 class RICHARDS_1D():
@@ -28,16 +32,16 @@ class RICHARDS_1D():
     
     """
      
-    def __init__(self,input_file):
+    def __init__(self, input_file, **kwargs):
         """
         Input:
             input_file: the file which contains all the information
             including forcing and parameters.
-        """      
+        """
         self.input_file = input_file
         
         # read the input data
-        self._read_input()
+        self._read_input(**kwargs)
         
         # initialize the variables and output file
         self.initialize()
@@ -45,58 +49,64 @@ class RICHARDS_1D():
         ################ run the model ########################
         for t in range(self.max_t):
             self.t = t
-              
-            # get forcing data at current time step        
+
+            # get forcing data at current time step
             self._get_forcing()
-            
+
             # call the unsat module
             self._unsat()
-                
-        self.nc_file.close() # close the output file
-         
-     
-            
-    def _read_input(self):
+
+        self.nc_file.close()  # close the output file
+
+
+    def _read_input(self, **kwargs):
         """
         This checks if all the required input sheets are present in the xls file,
         read the data from input file, which can be used later in other functions
         """
-    
+
         # list of required files in the input directory
         input_sheets = ['ind', 'forcing', 'initial_condition', 'units', 'temporal_info',
                        'spatial_info', 'soil_hyd_par', 'output_par']
-        
+
         # check if all the required sheets are present or not
         self._check_sheets(input_sheets, self.input_file)
-        
+
         # read the legend
         self._read_ind()
-        
+        if 'ind' in kwargs:
+            for key in kwargs['ind'].keys():
+                self.ind[key] = kwargs['ind'][key]
+
         # read the spatial data
         self._read_spatial()
-        
+
         # read the temporal data
         self._read_temporal()
 
         # read the units 
         self._read_units()
-        
+
         # read the initial condition
         self._read_initial_condition()
-        
+
         # read the soil hydraulic properties data
         self._read_shp()
-        
+
         # read the forcing infomation
         self._read_forcing()
-        
+
         # read the outfile name
-        self._read_ofile_name()
-        
+        ofile_name_exist = 'ofile_name' in kwargs
+        if ofile_name_exist:
+            self.ofile_name = kwargs['ofile_name']
+        else:
+            self._read_ofile_name()
+
         # print the reading status
-        output_message = 'Input data reading completed sucessfully'
+        output_message = 'Input data reading completed successfully'
         self._colored_output(output_message, 32)
-    
+
     def _check_sheets(self, check_sheets, check_file):
         """
         This functions check if all the sheets needed to model are present  
@@ -121,7 +131,7 @@ class RICHARDS_1D():
         """
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('ind')
-        # dont read the first line of the xls file
+        # does not read the first line of the xls file
         ind = {}
         for i in range(sheet.nrows-1):
             ind[str(sheet.cell_value(i+1,0))] = int(sheet.cell_value(i+1,1))
@@ -241,8 +251,8 @@ class RICHARDS_1D():
             self.pet = pet
         else:
             raise ValueError("The units of PET should be either 'mm' or 'm' ")
-            
-      
+
+
 
     def _read_ofile_name(self):
         """
@@ -251,7 +261,7 @@ class RICHARDS_1D():
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('output_par')
         j = self.ind['output_par']
-        self.ofile_name = str(sheet.cell_value(j,1))
+        self.ofile_name = str(sheet.cell_value(j, 1))
 
 
     def _colored_output(self, output_message, color):
@@ -281,8 +291,9 @@ class RICHARDS_1D():
             This returns None, but print the output in python shell
         """
                 
-        print(("\033[31m" +output_message+ "\033[0m").replace('31',str(color)))
-
+        #print(r"\033[1;%sm %s\033[1;m"%(color, output_message))
+        print('%s'%output_message)
+                
     def _get_forcing(self):
         """
         this will give the forcing at time t
@@ -290,33 +301,29 @@ class RICHARDS_1D():
         """
         self.rain_cur = self.rain[self.t]/self.dt_flux
         self.pet_cur = self.pet[self.t]/self.dt_flux
-                
+
         self.cur_year = self.year[self.t]
         self.cur_doy = self.doy[self.t]
-        
-    
+
     def smcf(self, theta, thetar, thetas, alpha, m, n):
         """
         smcf: calculate the smc
         """
         Se = (theta-thetar)/(thetas-thetar)
-        Se[Se<=0] = 0.0001
-        Se[Se>=1] = 0.9999
-        try:
-            smc = alpha*(thetas-thetar)*m*n*pow(Se,1/m+1)*pow(pow(Se,-1/m)-1,m)
-        except:
-            print thetas,thetar,m,n,Se,
+        
+        Se[Se<=0] = 1e-4
+        smc = 1e-2 + alpha*(thetas-thetar)*m*n*pow(Se,1/m+1)*pow(pow(Se,-1/m)-1,m)
+
         return smc
-    
+
     def theta2psi(self,theta, thetar, thetas, m, n, alpha):
         """
         theta2psi: given the theta calculate the psi
         """
         Se = (theta-thetar)/(thetas-thetar)
-        Se[Se<=0] = 0.0001
-        Se[Se>=1] = 0.9999
+        Se[Se<=0] = 1e-6
+        Se[Se>=1] = 0.999999
         psi = -(1/alpha)*pow(pow(Se,-1/m)-1,1/n)
-        psi[psi<-1e6] = -1e6
         return psi
         
     def psi2theta(self,psi, thetar, thetas, alpha, m, n):
@@ -330,20 +337,27 @@ class RICHARDS_1D():
          else:
              theta = thetar+(thetas-thetar)*pow(1+pow(abs(alpha*psi),n),-m)
          return theta
-         
-    def theta2kr(self,theta, thetar, thetas, m, l, Ks):
+
+    def theta2kr(self, theta, thetar, thetas, m, l, Ks):
         """
         theta2kr: given the theta, calculate the kr 
         """
         Se = (theta-thetar)/(thetas-thetar)
-        Se[Se<0] = 0.00001
-        Se[Se>1] = 0.99999
+        Se[Se<=0] = 1e-4
+        Se[Se>=1] = 1.0
         kr = Ks*(pow(Se,l))*pow(1-pow(1-pow(Se,1/m),m),2)
-        kr[Se<0] = 0
-        kr[Se>1] = Ks
-        
+
         return kr
     
+    def _infiltration(self, theta, thetas, precipitation):
+        """
+        computes infiltration
+        Ref:
+        Use of the Richards equation in land surface parameterizations
+        """
+        
+        return precipitation*(1-np.mean(theta[:10])/thetas)
+
     def initialize(self):
         """
         this initializes all the required variables
@@ -413,43 +427,44 @@ class RICHARDS_1D():
         l = self.soil_par['l']
         Ks = self.soil_par['Ks']
         nz = self.no_layer
-                
+
         theta = 1.0*self.theta
-        
+
         #delta_theta = (np.abs(flux)).max()
-        
+
         iter_dt = max(24,int(np.ceil(self.rain_cur*self.dt_flux*1000/0.15)))
         self.iter_dt = int(max(iter_dt,0.75*self.iter_dt))
-        
-        #if self.t == 56:
-        #    self.iter_dt = int(self.iter_dt*6)
-        #print self.iter_dt
-        
+
         recharge_day = 0
         aet_day = 0
-        
+        runoff_day = 0
+
         # check for time step
         for i in range(self.iter_dt):
             dt = self.dt_flux/self.iter_dt
-            #print dt
             # top boundary value
             smi = (self.theta[0]-self.soil_par['evap_0'])/(self.soil_par['evap_1']-self.soil_par['evap_0'])
             if smi<0: smi=0
             if smi>1: smi=1
             aet = smi*self.pet_cur
-            Bvalue = self.rain_cur-aet
-        
+            net_rain = self.rain_cur-aet
+            if net_rain>0:
+                Bvalue = self._infiltration(theta, thetas, net_rain)
+                runoff_day += (net_rain - Bvalue)*dt
+            else:
+                Bvalue = net_rain
+            
             K = self.theta2kr(theta,thetar,thetas,m,l,Ks)
             smc = self.smcf(theta,thetar,thetas,alpha,m,n)
             psi = self.theta2psi(theta,thetar,thetas,m,n,alpha)
-                        
+
             #flux boundary condition at the top
-            Kmid = np.empty(nz+1)        
+            Kmid = np.empty(nz+1)
             Kmid[0] = 0
             for i in range(1,nz):
                 Kmid[i] = 0.5*(K[i]+K[i-1])
             Kmid[nz] = K[nz-1]
-            
+
             #Setting the coefficient for the internal nodes
             A = np.empty(nz)
             B = np.empty(nz)
@@ -464,50 +479,58 @@ class RICHARDS_1D():
                 C[i] = A[i]
                 D[i] = smc[i]*psi[i]/dt-(Kmid[i+1]-Kmid[i])/dz
             # setting the coefficient for the top bc (flux boundary)
-            i = 0        
+            i = 0
             A[0] = 0
             B[0] = smc[i]/dt+(Kmid[1])/dz2
             D[0] = smc[i]*psi[i]/dt+(Bvalue-Kmid[1])/dz
-            
+
             # setting the coefficient for the bottom bc: gravity drainage
             B[nz-1] = smc[nz-1]/dt+(Kmid[nz])/dz2
             C[nz-1] = 0
             D[nz-1] = smc[nz-1]*psi[nz-1]/dt-(Kmid[nz]-Kmid[nz-1])/dz
-            
+
             # Solving using the thomas algorithm
             beta = np.empty(nz)
             gamma = np.empty(nz)
             u = np.empty(nz)
             beta[0] = B[0]
             gamma[0] = D[0]/beta[0]
+
             for i in range(1,nz):
                 beta[i] = B[i]-(A[i]*C[i-1])/(beta[i-1])
                 gamma[i] = (D[i]-A[i]*gamma[i-1])/(beta[i])
-            
+
             u[nz-1] = gamma[nz-1]
             for i in range(nz-2,-1,-1):
                 u[i] = gamma[i]-(C[i]*u[i+1])/beta[i]
-            
+            #if np.any(np.isnan(u)):
+            #    print('a')
             # flux computation between nodes
             J = np.empty(nz+1)
             for i in range(1,nz):
                 J[i] = Kmid[i]*(1-(u[i]-u[i-1])/dz)
             J[0] = Bvalue
             J[nz] = Kmid[nz]
-            
+
             J[nz] = J[nz]
+
             # flux updating
             flux = np.diff(J)*dt/dz
             theta = theta - flux
-            
-            if theta[0]>thetas:
-                theta[theta>thetas] = 0.99*thetas
-                        
+
+            theta[theta>thetas] = 0.99*thetas
+            theta[theta<thetar] = 1.01*thetar
+
             aet_day += aet*dt 
             recharge_day += J[nz]*dt
+
                             
-        self.theta = theta        
-                      
+        self.theta = theta
+
+
+        if np.any(np.isnan(theta)):
+            sys.exit("nan coming")
+        
         # write the output
         self.nc_year[self.t] = (self.cur_year)
         self.nc_doy[self.t] = (self.cur_doy)
@@ -1339,8 +1362,8 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         # read the outfile name
         self._read_ofile_name()
         
-              
-                
+
+
         # print the reading status
         output_message = 'Input data reading completed sucessfully'
         self._colored_output(output_message, 32)
@@ -1350,12 +1373,12 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         """
         read the information about the ensemble of the soil hydraulic parameters
         the information being read is the min and max
-        
+
         this also uses LHS to generate the ensemble of the parameters        
         """
         #get the row number from the ind
         j = self.ind['soil_hyd_par_ens']
-        
+
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('soil_hyd_par_ens')
         thetar_min, thetar_max = sheet.cell_value(j+1,1), sheet.cell_value(j+1,7)
@@ -1364,9 +1387,9 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         n_min, n_max = sheet.cell_value(j+1,4), sheet.cell_value(j+1,10)
         Ks_min, Ks_max = sheet.cell_value(j+1,5), sheet.cell_value(j+1,11)
         l_min, l_max = sheet.cell_value(j+1,6), sheet.cell_value(j+1,12)
-        
+
         v = lhs(stats.uniform,[],(6,self.n_ens))
-        
+
         shp_ens = {}
         shp_ens['thetar'] = thetar_min + (thetar_max-thetar_min)*v[0,:]
         shp_ens['thetas'] = thetas_min + (thetas_max-thetas_min)*v[1,:]
@@ -1374,7 +1397,7 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         shp_ens['n']      = n_min + (n_max-n_min)*v[3,:]
         shp_ens['Ks']     = Ks_min + (Ks_max-Ks_min)*v[4,:]
         shp_ens['l']      = l_min + (l_max-l_min)*v[5,:]
-                
+
         self.shp_ens = shp_ens
     
     def _shp_cur(self):
@@ -1389,23 +1412,23 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         soil_par['Ks'] = self.shp_ens['Ks'][self.ens]       
         soil_par['l'] = self.shp_ens['l'][self.ens]  
         soil_par['m'] = 1-1/soil_par['n']
-        
+
         # evaluate wilting point and field capacity
         soil_par['evap_1'] = self.psi2theta(-0.33, soil_par['thetar'], soil_par['thetas'], 
                                soil_par['alpha'], soil_par['m'], soil_par['n'])
-        
+
         soil_par['evap_0'] = self.psi2theta(-15, soil_par['thetar'], soil_par['thetas'], 
                                soil_par['alpha'], soil_par['m'], soil_par['n'])
-        
+
         self.soil_par = soil_par
-        
+
         self.nc_thetar[self.ens] = soil_par['thetar']
         self.nc_thetas[self.ens] = soil_par['thetas']
         self.nc_alpha[self.ens] = soil_par['alpha']
         self.nc_n[self.ens] = soil_par['n']
         self.nc_Ks[self.ens] = soil_par['Ks']
         self.nc_l[self.ens] = soil_par['l']
-                               
+
     
     def initialize(self):
         """
@@ -1413,10 +1436,10 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         and open the netcdf file for writting
         """
         max_t = int(self.final_time/self.dt_flux)
-        
+
         self.max_t = max_t
         self.iter_dt = 1
-                        
+
         # open file for writing
         file = nc.NetCDFFile(self.ofile_name, 'w')
         setattr(file, 'title', 'output of the model ambhas.richards_glue')
@@ -1425,31 +1448,31 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         file.createDimension('depth', self.no_layer)
         file.createDimension('time', self.max_t+1)
         file.createDimension('ensemble', self.n_ens)
-        
+
         # depth
         varDims = 'depth',
         depth = file.createVariable('depth', 'd', varDims)
         depth.units = 'm'
         depth[:] = np.tile(self.dz,self.no_layer).cumsum()-self.dz/2
-        
+
         # time (year and doy)
         varDims = 'time',
         self.nc_year = file.createVariable('year', 'd', varDims)
         self.nc_doy = file.createVariable('doy', 'd', varDims)
-        
+
         # soil moisture
         varDims = 'ensemble', 'depth', 'time'
         self.nc_sm = file.createVariable('sm','d', varDims)
         self.nc_sm.units = 'v/v'
         self.nc_sm[:,:,0] = self.theta
-        
+
         # recharge and aet
         varDims = 'ensemble','time'
         self.nc_aet = file.createVariable('aet','d',varDims)
         self.nc_aet.units = 'mm'
         self.nc_recharge = file.createVariable('recharge','d',varDims)
         self.nc_recharge.units = 'mm'
-        
+
         # soil_par
         varDims = 'ensemble',
         self.nc_thetar = file.createVariable('thetar','d',varDims)
@@ -1458,34 +1481,34 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         self.nc_n = file.createVariable('n','d',varDims)
         self.nc_Ks = file.createVariable('Ks','d',varDims)
         self.nc_l = file.createVariable('l','d',varDims)
-        
+
         self.nc_file = file
-    
+
     def _read_initial_condition(self):
         """
         read initial condition
         """
         #get the row number from the ind
         j = self.ind['initial_condition']
-        
+
         book = xlrd.open_workbook(self.input_file)
         sheet = book.sheet_by_name('initial_condition')
-        
+
         data_len = sheet.nrows-1
         theta = np.zeros(data_len)
-        
+
         for i in xrange(data_len):
             theta[i] = sheet.cell_value(i+1,j-1)
-        
+
         self.theta = theta
-                
-    
+
+
     def _unsat(self):
         """
         top boundary: atmoshpheric
         bottom boundary: gravity drainage
         """
-               
+
         thetar = self.soil_par['thetar']
         thetas = self.soil_par['thetas']
         alpha = self.soil_par['alpha']
@@ -1494,21 +1517,21 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         l = self.soil_par['l']
         Ks = self.soil_par['Ks']
         nz = self.no_layer
-                
+
         theta = 1.0*self.theta
-        
+
         #delta_theta = (np.abs(flux)).max()
-        
+
         iter_dt = max(24,int(np.ceil(self.rain_cur*self.dt_flux*1000/0.15)))
         self.iter_dt = int(max(iter_dt,0.75*self.iter_dt))
-        
+
         #if self.t == 56:
         #    self.iter_dt = int(self.iter_dt*6)
         #print self.iter_dt
-        
+
         recharge_day = 0
         aet_day = 0
-        
+
         # check for time step
         for i in range(self.iter_dt):
             dt = self.dt_flux/self.iter_dt
@@ -1519,18 +1542,18 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
             if smi>1: smi=1
             aet = smi*self.pet_cur
             Bvalue = self.rain_cur-aet
-        
+
             K = self.theta2kr(theta,thetar,thetas,m,l,Ks)
             smc = self.smcf(theta,thetar,thetas,alpha,m,n)
             psi = self.theta2psi(theta,thetar,thetas,m,n,alpha)
-                        
+
             #flux boundary condition at the top
             Kmid = np.empty(nz+1)        
             Kmid[0] = 0
             for i in range(1,nz):
                 Kmid[i] = 0.5*(K[i]+K[i-1])
             Kmid[nz] = K[nz-1]
-            
+
             #Setting the coefficient for the internal nodes
             A = np.empty(nz)
             B = np.empty(nz)
@@ -1538,23 +1561,23 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
             D = np.empty(nz)
             dz = self.dz
             dz2 = dz**2
-            
+
             for i in range(nz):
                 A[i] = -(Kmid[i]/dz2)
                 B[i] = smc[i]/dt+(Kmid[i+1]+Kmid[i])/dz2
                 C[i] = A[i]
                 D[i] = smc[i]*psi[i]/dt-(Kmid[i+1]-Kmid[i])/dz
             # setting the coefficient for the top bc (flux boundary)
-            i = 0        
+            i = 0
             A[0] = 0
             B[0] = smc[i]/dt+(Kmid[1])/dz2
             D[0] = smc[i]*psi[i]/dt+(Bvalue-Kmid[1])/dz
-            
+
             # setting the coefficient for the bottom bc: gravity drainage
             B[nz-1] = smc[nz-1]/dt+(Kmid[nz])/dz2
             C[nz-1] = 0
             D[nz-1] = smc[nz-1]*psi[nz-1]/dt-(Kmid[nz]-Kmid[nz-1])/dz
-            
+
             # Solving using the thomas algorithm
             beta = np.empty(nz)
             gamma = np.empty(nz)
@@ -1564,31 +1587,31 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
             for i in range(1,nz):
                 beta[i] = B[i]-(A[i]*C[i-1])/(beta[i-1])
                 gamma[i] = (D[i]-A[i]*gamma[i-1])/(beta[i])
-            
+
             u[nz-1] = gamma[nz-1]
             for i in range(nz-2,-1,-1):
                 u[i] = gamma[i]-(C[i]*u[i+1])/beta[i]
-            
+
             # flux computation between nodes
             J = np.empty(nz+1)
             for i in range(1,nz):
                 J[i] = Kmid[i]*(1-(u[i]-u[i-1])/dz)
             J[0] = Bvalue
             J[nz] = Kmid[nz]
-            
+
             J[nz] = J[nz]
             # flux updating
             flux = np.diff(J)*dt/dz
             theta = theta - flux
-            
+
             theta[theta>thetas] = 0.99*thetas
             theta[theta<thetar] = 1.01*thetar
-                        
+
             aet_day += aet*dt 
             recharge_day += J[nz]*dt
-                            
-        self.theta = theta        
-                      
+
+        self.theta = theta
+
         # write the output
         self.nc_year[self.t] = (self.cur_year)
         self.nc_doy[self.t] = (self.cur_doy)
@@ -1596,28 +1619,30 @@ class RICHARDS_1D_GLUE(RICHARDS_1D):
         self.nc_recharge[self.ens,self.t] = recharge_day
         self.nc_aet[self.ens,self.t] = aet_day
         self.nc_rain[self.t] = self.rain_cur
-        
+
         # print progress
         if self.t == int(0.25*self.max_t):
             output_message = '25 % completed'
             self._colored_output(output_message, 32)
-        
+
         elif self.t == int(0.5*self.max_t):
             output_message = '50 % completed'
             self._colored_output(output_message, 32)
-        
+
         elif self.t == int(0.75*self.max_t):
             output_message = '75 % completed'
             self._colored_output(output_message, 32)
-        
+
         elif self.t == self.max_t-1:
             output_message = '100 % completed'
             self._colored_output(output_message, 32)
         #print self.t
         
 if __name__=='__main__':
-     
-    maddur = RICHARDS_1D('/home/tomer/svn/ambhas/examples/maddur.xls')
+    ofile_name = '/home/tomers/svn/ambhas/examples/tmp2.nc'
+    ind = {}
+    ind['soil_hyd_par'] = 13
+    maddur = RICHARDS_1D('/home/tomers/svn/ambhas/examples/maddur.xls', ind=ind)
     #output_file = nc.NetCDFFile(maddur.ofile_name, 'r')
     #print output_file.variables
     #foo = output_file.variables['sm']
@@ -1625,11 +1650,11 @@ if __name__=='__main__':
     #print theta[:,-2]
     #print theta[:,-1]
     #plt.plot(theta[:,-1]); plt.plot(theta[:,-2]); plt.show()
-    
+
     #maddur_ens = RICHARDS_1D_ENKF('/home/tomer/richards/input/maddur_ens.xls')
     #output_file = nc.NetCDFFile(maddur_ens.ofile_name, 'r')
     #foo = output_file.variables['sm'][:,0,:]
-    
+
     #maddur_glue = RICHARDS_1D_GLUE('/home/tomer/richards/input/maddur_glue_57.xls')
-    
+
     
